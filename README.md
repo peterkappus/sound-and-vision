@@ -8,14 +8,13 @@ Experiments with Super Collider and HTML (P5) to create cool sounds and things t
 3. USB connection between them.
 
 ## Software Requirements
-1. Super Collider
+1. [Super Collider](https://supercollider.github.io/)
 2. Chrome (for visualisation)
-3. Optional: Touch OSC on iOS
+3. Optional: [Touch OSC](https://hexler.net/products/touchosc) on iOS
 
 
 ## Audio Setup
-Goal: Play without breaking your ears or your gear
-2. Record to GarageBand, etc.
+These steps allow you to play through GarageBand to avoid breaking your ears or your gear. This also allows you to record your creations.
 
 1. Install the [BlackHole](https://github.com/ExistentialAudio/BlackHole) audio driver
 2. Open Garage Band 
