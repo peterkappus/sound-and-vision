@@ -2,7 +2,7 @@
 Server.default.options.device = "BlackHole 16ch";
 //Server.default.options.device = "Built-in Output";
 
-//ServerOptions.devices;
+ServerOptions.devices;
 
 //handle large delay sizes
 //s.options.memSize= 8192*2;
@@ -31,6 +31,7 @@ MIDIIn.connectAll;
 // The keys are the channel IDs and values are the harmonic (multiple of the fundamental)
 // defaults to 1, goes up to 12 (for now)
 
+//starting midi channel
 ~harmonic_channels_start_index = 17;
 ~harmonic_channels = Dictionary.new;
 6.do{
@@ -53,7 +54,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if( chan == ~reverb_chan) {
-		z.set(\room, LinLin.kr(ccNum, 0,127,0.05,55));
+		z.set(\room, LinLin.kr(ccNum, 0,127,0.05,10));
 	};
 
 	if( chan >= ~harmonic_channels_start_index && (chan < (~harmonic_channels_start_index.asInteger + ~harmonic_channels.size))) {
@@ -65,11 +66,11 @@ MIDIdef.cc(\ccFunc, {
 
 MIDIdef.noteOn(\noteOn,{
 	arg veloc,num,chan, vol;
-	vol = LinLin.kr(veloc,0,127,0,1);
+	//vol = LinLin.kr(veloc,0,127,0,1);
 	[veloc,num,chan].postln;
 	//~bandwidth.postln;
 
-	Synth(\ping, [\vol, vol,
+	Synth(\ping, [\vol, veloc.linexp(0,127,0.01,1),
 		\note, num,
 		\harmonics, ~harmonic_channels.asPairs.asAssociations(SortedList).collect{|item| item.value},
 		\release, ~release,
@@ -143,11 +144,14 @@ SynthDef(\ping,	{
 }).add;
 
 
-
+//do this outside the routine
+fork{
+5.wait;
 //instantiate our freeverb (replacing our usual output)
 z = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 //z.set(\mix, 0.23);
 //z.set(\damp, 0.4);
+}
 )
 
 //{SinOsc.ar() * Xline.kr(1,0,2)}.play

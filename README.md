@@ -2,6 +2,8 @@
 
 Experiments with Super Collider and HTML (P5) to create cool sounds and things to look at.
 
+Check individual folders for specific projects & their respective readmes.
+
 ## Hardware Requirements
 1. A laptop (e.g. MacBook Pro)
 2. A midi controller (I'm using an M-Audio Oxygen25) 
@@ -11,7 +13,6 @@ Experiments with Super Collider and HTML (P5) to create cool sounds and things t
 1. [Super Collider](https://supercollider.github.io/)
 2. Chrome (for visualisation)
 3. Optional: [Touch OSC](https://hexler.net/products/touchosc) on iOS
-
 
 ## Audio Setup
 These steps allow you to play through GarageBand to avoid breaking your ears or your gear. This also allows you to record your creations.
@@ -31,7 +32,22 @@ You should now hear SC audio through GarageBand. This means you can record it. Y
 3. See the "snow" fall with each note.
 4. Bonus: Fullscreen the browser and move the mouse to the side
 
-## Development Workflow
+
+## Video capture & formatting tips (e.g. for Instagram)
+1. Capture video with Quicktime Player
+2. Need to crop a a video to 720p? Use an FFMPEG Docker image:
+`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/INPUT_FILE_GOES_HERE.mov -vf "scale=480:720:force_original_aspect_ratio=decrease,pad=480:720:(ow-iw)/2:(oh-ih)/2,setsar=1" -ac 2 /data/OUTPUT_FILE_GOES_HERE.mp4`
+The above will crop to 480:720 (great for Instagram) and add padding if required. Also *IMPORTANT* the "-ac 2" bit converts my weird quad audio (from my audio interface) into stereo. Otherwise, you won't get any sound on Instagram. (the horror!)
+
+Or just crop (no scaling... probably better quality): `ffmpeg -i in.mp4 -filter:v "crop=1280:720:0:0" -c:a copy out.mp4`
+
+
+## Local Development
+
+## Simple Server
+If required, you can use `python -m SimpleHTTPServer 8000`
+
+### Workflow
 This workflow should work for any project, the below explains how to create a new feature branch, autosave every 2 min and then merge/squash the commits into a single commit on the master branch.
 ```
 #create a new 'working' branch for experimentation
@@ -50,4 +66,7 @@ git merge --squash working
 
 #commit these changes with a meaningful commit comment
 git commit -am "My useful comment about this new feature"
+
+# delete the old working branch
+git branch -d working
 ```
