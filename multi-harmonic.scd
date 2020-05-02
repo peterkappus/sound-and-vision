@@ -3,6 +3,8 @@
 //credit: Eli Fieldsteel
 //transcribed from this: https://www.youtube.com/watch?v=ZVTbRNu2BI0
 
+s.boot;
+
 
 //midi stuff
 //initialize a midi client
@@ -85,7 +87,7 @@ z = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 //z.set(\damp, 0.4);
 }
 */
-
+/*
 
 x = Synth.new(\tone, [\nharm,3, \freq, Pxrand([400,600,800,1200]));
 
@@ -94,6 +96,17 @@ b = {Blip.ar(40,20) * [0.2,0.2]}.play
 x = {LFSaw.ar(2300) * 0.2}.play
 x.free();
 b.free();
+*/
+
+// kick it in
+z = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail)
+// experiment with some settings
+z.set(\room, 0.7)
+z.set(\mix, 0.33)
+z.set(\damp, 0.9)
+
+// silence
+[a, z].do(_.free)
 
 s.boot
 Server.killAll
