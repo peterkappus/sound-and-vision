@@ -14,13 +14,17 @@ var attackTime = 0.0001;
 var decayTime = 0.2;
 var susPercent = 1;
 var releaseTime = 0.1;
+var octaves = 5;
 
 var cols = 7;
 
 
 //var notes = [0,6,7,9,12,14,16,19,24];
 //var notes = [ 0, 2, 4, 7, 9, 11 ];
-var notes = [0, 2, 4, 7, 9, 11, 14];
+//var notes = [0, 2, 4, 7, 9, 11, 14];
+
+var notes = [0,1,3,7,8]; //Pelog
+
 //notes = [0,2,4,5,8];
 //var notes = [0,5,7];
 
@@ -106,7 +110,7 @@ function draw() {
     ellipse(margin+ Math.round(random(cols-1)) * diam + (diam/2),margin+ Math.round(random(rows-1)) * diam + (diam/2),diam*0.8);
 
     
-    var octave = Math.round(random(1,5));
+    var octave = Math.round(random(0,octaves));
 
     //don't repeat notes...
     while(note == previousNote) {
