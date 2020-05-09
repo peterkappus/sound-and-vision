@@ -42,6 +42,9 @@ TODO:  put the above into a bash file for easy automation. Maybe make a README j
 
 ### Workflow
 This workflow should work for any project, the below explains how to create a new feature branch, autosave every 2 min and then merge/squash the commits into a single commit on the master branch.
+
+Of course, with multiple people doing "real" development together, you should probably use Pull Requests.
+
 ```
 #create a new 'working' branch for experimentation
 git checkout -b working

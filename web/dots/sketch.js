@@ -49,8 +49,6 @@ function setup() {
 
   frameRate(rate);
 
-  //record it!
-
   //avoid clipping in captured audio
   masterVolume(0.5)
 
