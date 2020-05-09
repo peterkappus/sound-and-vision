@@ -5,22 +5,19 @@ Sonic and visual experiments using [SuperCollider](https://supercollider.github.
 Check individual folders for specific projects & their respective READMEs.
 
 ## What's in here?
-`supercollider` - SuperCollider instruments, experiments, etc. Quite messy at present.
-`web` - things which run in a web browser
-`utils` - Utilities for stitching together video and audio files, resizing videos for instagram, etc.
+* `supercollider` - SuperCollider instruments, experiments, etc. (Quite messy right now.)
+* `web` - Things which run in a web browser
+* `utils` - Utilities for stitching together video and audio files, resizing videos for instagram, etc.
 
-## Hardware Requirements
-1. A laptop (e.g. MacBook Pro)
-2. A midi controller (I'm using an M-Audio Oxygen25) 
-3. USB connection between them.
 
 ## Software Requirements
 1. [Super Collider](https://supercollider.github.io/)
-2. Chrome (for visualisation)
+2. Chrome Browser (for visualisation)
 3. Optional: [Touch OSC](https://hexler.net/products/touchosc) on iOS
+4. Optional: Docker for `ffmpeg` and other utils
 
-## Audio Setup
-These steps allow you to play through GarageBand to avoid breaking your ears or your gear. This also allows you to record your creations.
+## Audio Tips for SuperCollider
+These steps allow you to play through GarageBand to avoid breaking your ears or your gear when playing with SuperCollider. This also allows you to record your creations.
 
 1. Install the [BlackHole](https://github.com/ExistentialAudio/BlackHole) audio driver
 2. Open Garage Band 
