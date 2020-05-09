@@ -1,8 +1,13 @@
 # Sound and Vision
 
-Experiments with Super Collider and HTML (P5) to create cool sounds and things to look at.
+Sonic and visual experiments using [SuperCollider](https://supercollider.github.io/) and [p5.js](https://p5js.org/) to make audio/visual artworks. Some are stand alone pieces that run on their own in a browser (see musical dots), others are instruments, audio processors, or other tools which can be used (often with audio or Midi input) to create different things.
 
-Check individual folders for specific projects & their respective readmes.
+Check individual folders for specific projects & their respective READMEs.
+
+## What's in here?
+`supercollider` - SuperCollider instruments, experiments, etc. Quite messy at present.
+`web` - things which run in a web browser
+`utils` - Utilities for stitching together video and audio files, resizing videos for instagram, etc.
 
 ## Hardware Requirements
 1. A laptop (e.g. MacBook Pro)
@@ -26,26 +31,17 @@ To see available drivers, use `ServerOptions.devices;`
 
 You should now hear SC audio through GarageBand. This means you can record it. You can also use this input for recording screencasts (with QuickTime Player) or using other recording software. 
 
-## Running the live video
-1. Open "index.html"
-2. Play some midi notes
-3. See the "snow" fall with each note.
-4. Bonus: Fullscreen the browser and move the mouse to the side
-
 
 ## Video capture & formatting tips (e.g. for Instagram)
 1. Capture video with Quicktime Player
 2. Need to crop a a video to 720p? Use an FFMPEG Docker image:
 `docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/INPUT_FILE_GOES_HERE.mov -vf "scale=480:720:force_original_aspect_ratio=decrease,pad=480:720:(ow-iw)/2:(oh-ih)/2,setsar=1" -ac 2 /data/OUTPUT_FILE_GOES_HERE.mp4`
 The above will crop to 480:720 (great for Instagram) and add padding if required. Also *IMPORTANT* the "-ac 2" bit converts my weird quad audio (from my audio interface) into stereo. Otherwise, you won't get any sound on Instagram. (the horror!)
-
 Or just crop (no scaling... probably better quality): `ffmpeg -i in.mp4 -filter:v "crop=1280:720:0:0" -c:a copy out.mp4`
 
+TODO:  put the above into a bash file for easy automation. Maybe make a README just for FFMPEG tips...
 
 ## Local Development
-
-## Simple Server
-If required, you can use `python -m SimpleHTTPServer 8000`
 
 ### Workflow
 This workflow should work for any project, the below explains how to create a new feature branch, autosave every 2 min and then merge/squash the commits into a single commit on the master branch.
