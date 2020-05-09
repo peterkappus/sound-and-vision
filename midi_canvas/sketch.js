@@ -22,6 +22,8 @@ var dr = 0.5;
 var spawnProbability = 90;
 var randSeed = 0;
 
+var controlChannels = [];
+var usedChannels = [];
 
 var colorStrings = [
   //my hot calder colors
@@ -81,55 +83,57 @@ WebMidi.enable(function (err) {
   } else {
     console.log("WebMidi enabled!");
     
-    WebMidi.inputs[1].addListener('controlchange', "all",
-        function (e) {
-          console.log("Received 'controlchange' message.", e.controller.number);
-          
-          if(e.controller.number == 16) {
-            bgAlphaFactor = map(e.value, 0,127,0,0.3);
-          }
-          
-          if(e.controller.number == 14) {
-            strokeFatness = map(e.value,0,127,0,1.5);
-          } 
-          
-          if(e.controller.number == 18) {
-            alphaFactor = map(e.value,0,127,0.95,1);
-          }
-          
-          if(e.controller.number == 20) {
-            dRad = map(e.value,0,127,0.95,1.05);
-          }
-          
-          //c3
-          /*if(e.controller.number == 19) {
-            longevityFactor = map(e.value,0,127,0.99,0.9999);
-          }*/
-          
-        }
-      );  
+    WebMidi.inputs[1].addListener('controlchange', "all", respondToControllerChange);  
+    WebMidi.inputs[0].addListener('controlchange', "all", respondToControllerChange);  
     
-    WebMidi.inputs[0].addListener('noteon', "all",
-        function (e) {
-          bgColor *= 1.01;
-          circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1]));
-          //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
-        }
-      );
-      
-      
-    /*  WebMidi.inputs[1].addListener('noteon', "all",
-          function (e) {
-            circs.push(new Circ(e.note.number,e.velocity));
-            console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
-          }
-        );
-        */
-        
+    WebMidi.inputs[1].addListener('noteon', "all", noteOn);    
+    WebMidi.inputs[0].addListener('noteon', "all", noteOn);    
   }
   
 });
 
+
+function noteOn (e) {
+          bgColor *= 1.01;
+          circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1]));
+          //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
+        }
+
+function respondToControllerChange(e) {
+  var controllerNumber = e.controller.number;
+  
+  console.log("Received 'controlchange' message.", controllerNumber);
+  
+  'bgAlpha fatness alpha dRad'.split(" ").forEach(name => {
+    if(typeof(controlChannels[name]) == "undefined" && typeof(usedChannels[controllerNumber]) == "undefined" ) {
+      controlChannels[name] = controllerNumber;
+      usedChannels[controllerNumber] = true;
+      console.log("assigning " + name + " to " + controllerNumber);
+    }
+  });
+  
+  if(controllerNumber == controlChannels['bgAlpha']) {
+    bgAlphaFactor = map(e.value, 0,127,0,0.3);
+  }
+  
+  if(controllerNumber == controlChannels['fatness']) {
+    strokeFatness = map(e.value,0,127,0,1.5);
+  } 
+  
+  if(controllerNumber == controlChannels['alpha']) {
+    alphaFactor = map(e.value,0,127,0.95,1);
+  }
+  
+  if(controllerNumber == controlChannels['dRad']) {
+    dRad = map(e.value,0,127,0.95,1.05);
+  }
+  
+  //c3
+  /*if(e.controller.number == 19) {
+    longevityFactor = map(e.value,0,127,0.99,0.9999);
+  }*/
+  
+}
   
   
 function draw() {
