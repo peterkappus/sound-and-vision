@@ -1,13 +1,11 @@
 "use strict";
 
 var bgColor = 255;
-
 var frame = 0;
 //how many frames to capture
 var totalFrames = 80000;
-var strokeFatness = 0.2; //percentage
+var strokeFatness = 0.0; //percentage
 var bgAlpha = 255;
-var bgAlphaFactor = 1;
 var alphaFactor = 1;
 var longevityFactor = 0.999;
 var dRad = 0.998;
@@ -24,6 +22,21 @@ var randSeed = 0;
 
 var controlChannels = [];
 var usedChannels = [];
+var assignedParams = [];
+
+var params = [];
+
+var paramNames = "red green blue dAlpha shrinkFactor longevityFactor bgAlphaFactor strokeFatness";
+  paramNames.split(" ").forEach(name => {
+    //assign to an object so we can reference it from our channels array, too
+    params[name] = {
+        value: 0,
+        name: name
+    };
+  });
+
+
+var bg;
 
 var colorStrings = [
   //my hot calder colors
@@ -49,6 +62,9 @@ var colors = [];
 var circs = [];
 
 function setup() {
+  bg = color(255,253,0,255);
+  //colors = ["#fff"];
+  //random(colorStrings).split(",");
   colors = random(colorStrings).split(",");
   
   //square
@@ -94,53 +110,67 @@ WebMidi.enable(function (err) {
 
 
 function noteOn (e) {
-          bgColor *= 1.01;
-          circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1]));
+          if(random() < 0.1) {
+            for(var i =0; i < random(8); i++){
+              circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],random(0.2,0.7)));
+            }
+          }else{
+            circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],1));
+          }
+          
           //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
         }
 
 function respondToControllerChange(e) {
   var controllerNumber = e.controller.number;
   
-  console.log("Received 'controlchange' message.", controllerNumber);
+  //console.log("Received 'controlchange' message.", controllerNumber);
+  var controlObject = controlChannels[controllerNumber];
   
-  'bgAlpha fatness alpha dRad'.split(" ").forEach(name => {
-    if(typeof(controlChannels[name]) == "undefined" && typeof(usedChannels[controllerNumber]) == "undefined" ) {
-      controlChannels[name] = controllerNumber;
-      usedChannels[controllerNumber] = true;
-      console.log("assigning " + name + " to " + controllerNumber);
+  //first learn each controller and assign it to a param
+  paramNames.split(" ").forEach(name => {
+    
+    if(typeof(controlChannels[controllerNumber]) == "undefined" && typeof(assignedParams[name]) == "undefined" ) {
+      console.log(`Assigning number ${controllerNumber} to ${name}`);
+      //point the channels array element to the params array element
+      controlChannels[controllerNumber] = params[name];
+      assignedParams[name] = true;
     }
+    
   });
-  
-  if(controllerNumber == controlChannels['bgAlpha']) {
-    bgAlphaFactor = map(e.value, 0,127,0,0.3);
+    
+  //update the value
+  if(typeof(controlObject) == "object") {
+    console.log(`updating ${controlObject.name}`);
+    controlObject.value = map(e.value,0,127,0,255);
   }
-  
-  if(controllerNumber == controlChannels['fatness']) {
-    strokeFatness = map(e.value,0,127,0,1.5);
-  } 
-  
-  if(controllerNumber == controlChannels['alpha']) {
-    alphaFactor = map(e.value,0,127,0.95,1);
-  }
-  
-  if(controllerNumber == controlChannels['dRad']) {
-    dRad = map(e.value,0,127,0.95,1.05);
-  }
-  
-  //c3
-  /*if(e.controller.number == 19) {
-    longevityFactor = map(e.value,0,127,0.99,0.9999);
-  }*/
   
 }
   
+function getParam(name) {
+  if(defined(params[name])) {
+    return(params[name].value);
+  } else {
+    return(0);
+  }
+}
+
+function defined(thing){
+  return(typeof(thing) != "undefined");
+}
   
+function debug(msg){
+  console.log(msg);
+}
+
 function draw() {
   //FUN-> turn this off to "paint"
   
-  background(bgColor,bgAlphaFactor * 255);
+  //background(bgLightness,bgAlphaFactor * 255);
   
+   //colorMode(HSB);
+   background(getParam("red"),getParam("green"),getParam("blue"), map(getParam("bgAlphaFactor"),0,255,24,0));
+   
   //gradually fade to black
   //background(bgColor *= 0.999);
   
@@ -164,17 +194,16 @@ function draw() {
   if(random() < 0.01) {
     //slowly shift the starting point for our perlin noise by adding this to every calculation
     randSeed += 0.01;
-    console.log("shift");
   }
 }
 
 class Circ{
-  constructor(note, vel, link){
+  constructor(note, vel, link, scale=1){
     this.life = 1;//degrades from 100%
     this.link = link;
     this.note = note;
     this.vel = vel;
-    this.stroke = vel*20*strokeFatness;
+    this.stroke = vel * 20 * getParam("strokeFatness")/255;
     //this.alpha = random(220,250);
     this.randSeed = random(0,0.1);
     this.color = color(random(colors));
@@ -182,11 +211,9 @@ class Circ{
     //this.g = random(255);
     //this.b = random(255);
     this.alpha = 255;
-    this.dalpha = random(0.998,0.9999);
     //lowest note on 88 key keyboard is 21, highest is 108 (on my kawai anyway...)
-    //found via console.log(this.note);
     this.x = map(this.note,21,108,0,width);
-    this.rad = random(0.8,1.2) * map(this.vel, 0, 1, width/700, width/20);
+    this.rad = random(0.8,1.2) * map(this.vel, 0, 1, width/700, width/20) * scale;
     this.y = height * random(0.8,0.9);
     //this.dy = random(-0.1,0.5);
     this.dy = random(-1.0,-0.05);
@@ -207,14 +234,13 @@ class Circ{
 
   step(){
     //this.rad *= 0.999;
-    this.life *= longevityFactor;
-    this.rad *= dRad;
+    this.life *= map(getParam("longevityFactor"),0,255,0.999,0.99999);
+    this.rad *= map(getParam("shrinkFactor"),0,255,0.95,1.05);
     //this.rad *= 0.998;
     //this.alpha *= this.dalpha;
-    this.alpha *= alphaFactor;
+    this.alpha *= this.life;//map(getParam("dAlpha"),0,255,254,255) * this.life;
     //this.alpha *= this.dalpha;
     this.color.setAlpha(this.alpha);
-    this.dalpha *= 0.999;
     //this.fill *= 0.9999;
     this.y += this.dy 
     this.x += this.dx;
