@@ -30,35 +30,53 @@ MIDIIn.connectAll;
 
 ~decay = 0.8;
 
-~sustained = false;
+~sustainValue = 0;
+
+l = List.new();
+l = List[3,5,2,35,34,234,2355,3];
+
+l.size;
 
 
 ~activenotes = nil!128; //make Array of 128 slots, initially with nil objects in to represent nothing
 
-~releasefunction = {|index|
+~notes = List.new();
 
-	if(~sustained != true) {
-		if(index.isNil){
-			//iterate through all notes and release each one
-			"release!".postln;
-			for(0,127, {|i|
-				~activenotes[i].release; //will send gate=0
-				//~activenotes[i] = nil; //make sure now empty slot ready
-			});
-		} {
-			//release existing note if present already
-			if(~activenotes[index].notNil) {
-				~activenotes[index].release; //will send gate=0
-				~activenotes[index] = nil; //make sure now empty slot ready
-			}
+~notes.size;
+
+~releasefunction = {|index|
+	//called without an argument means we've released the sustain pedal.
+	if(index.isNil){
+		//iterate through all notes and release each one
+		"release!".postln;
+		~notes.size.postln;
+
+		for(0,~notes.size-1, {|i|
+			~notes.pop().release;
+		});
+
+		/*for(0,127, {|i|
+		~activenotes[i].release; //will send gate=0
+		//~activenotes[i] = nil; //make sure now empty slot ready
+		});*/
+
+	} {
+		//release existing note if present already
+		if(~activenotes[index].notNil) {
+			~activenotes[index].release; //will send gate=0
+			~activenotes[index] = nil; //make sure now empty slot ready
 		}
 	}
 };
 
-
+~isSustained = {
+	(~sustainValue > 0);
+	//false;
+};
 
 MIDIdef.noteOn(\noteOn,{
 	arg veloc,num,chan, vol;
+	var synth;
 	[veloc,num,chan].postln;
 	//vol = LinLin.kr(veloc,0,127,0,1);
 	vol = veloc.linexp(0,127,0.03,1);
@@ -67,8 +85,11 @@ MIDIdef.noteOn(\noteOn,{
 
 	~releasefunction.value(num);
 
+	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \decay, ~decay, \pan, 0.5.rand2, \freq,num.midicps]);
+
 	//put active note in array; function above tidied any existing note on this key
-	~activenotes[num] = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \decay, ~decay, \pan,0.5.rand2, \freq,num.midicps]);
+	~activenotes[num] = synth;
+
 	//Synth(\sound,[\freq,midinote.midicps,\amp,velocity/127.0]);
 
 
@@ -88,11 +109,18 @@ MIDIdef.noteOn(\noteOn,{
 MIDIdef.noteOff(\noteOff,{
 	arg src,num,chan, vol;
 
-	~releasefunction.value(num);
+	if(~isSustained.value(0)) {
+		//"sustained!".postln;
+		//~isSustained.postln;
+		~notes.add(~activenotes[num]);
+	} {
+		~releasefunction.value(num);
+	}
 
 });
 
 
+~previousSustainValue;
 
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
@@ -101,9 +129,11 @@ MIDIdef.cc(\ccFunc, {
 	//sustain pedal
 	if(chan == 64) {
 		//greater than 100...
-		~sustained = (ccNum > 100);
+		~previousSustainValue = ~sustainValue;
+		~sustainValue = ccNum;
 
-		if(~sustained == false) {
+		//are we letting go?
+		if(~sustainValue < ~previousSustainValue) {
 			~releasefunction.value();
 		}
 	};
@@ -124,10 +154,10 @@ MIDIdef.cc(\ccFunc, {
 SynthDef.new(\tone, {
 
 	arg freq=40, nharm=12, detune=0.2, pan=0, vol=1, out=0, decay = 0.1, gate=1;
-	var sig, env;
+	var sig, env, plunk, plunkEnv;
 	//env = EnvGen.kr(Env.adsr(0.5,0.1, 0.5, 1),gate,doneAction: 2);
 	//env = EnvGen.ar(Env([0,1,0],[0.001,decay]),doneAction:2);
-	env= EnvGen.ar(Env.asr(0.01,1.0,0.001),gate,doneAction:2);
+	env= EnvGen.ar(Env.asr(0.01,1.0,0.1),gate,doneAction:2);
 
 
 	//env = XLine.kr(1,0,0.5,doneAction: 2);
@@ -141,15 +171,22 @@ SynthDef.new(\tone, {
 
 	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio);
 
+	//harmonic
+	//sig = sig +  SinOsc.ar(freq * 3/2 * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
+
+
+
+	//sig = sig + Dust.ar(10,0.25);
+	//sig =  sig + Gendy1.ar(5.rand, 6.rand,0.95,0.95,freq/2 *0.99, freq/2 * 1.01, 0.05,0.08) * 0.5;
+
 	//filter= Resonz.ar(saw,1000,0.1)*amp;
 
-	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,6000,14000),0.2) * 0.5;
+	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000),0.8);
 
 	//sig = sig + Pulse.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.2;
 	//sig =  Pulse.ar(freq) * 0.5;
 
 	//sig = Pulse.ar(freq * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).);
-
 
 	//assign each of the 16 voices a different amplitude
 	sig = sig * LFNoise1.kr(1!16).exprange(0.2,1);
@@ -158,7 +195,16 @@ SynthDef.new(\tone, {
 	sig = Balance2.ar(sig[0],sig[1],pan);
 	sig = sig * env * vol;
 
+	/*plunkEnv = Env.perc();
+	plunkEnv = EnvGen.ar(Env([0,1,0],[0.001,5]),doneAction:2);
+
+	plunk = LFNoise2.ar(freq*8000!2) * 0.01 * vol * plunkEnv;
+	//plunk = SinOsc.ar(freq) * vol * 0.5;
+	*/
+
+	//Out.ar(out,Mix.new([sig,plunk]));
 	Out.ar(out,sig);
+
 }).add;
 
 // FreeVerb2 - demo synthdef
@@ -167,7 +213,7 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
 
     signal = In.ar(out, 2);
 
-	signal = signal + CombN.ar(signal, 1.5, {Rand([0.5,0.75,1.5])}!16, 3);
+	//signal = signal + CombN.ar(signal, 1.5, {Rand([0.5,0.75,1.5])}!16, 3);
 
 
 
@@ -182,9 +228,9 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
 
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
-			thresh: 0.9,
+			thresh: 0.84,
 			slopeBelow: 1,
-			slopeAbove: 1,
+			slopeAbove: 200,
 			clampTime:  0.01,
 			relaxTime:  0.01,
 			mul: 1.2
