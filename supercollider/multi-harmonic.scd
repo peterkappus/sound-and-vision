@@ -10,12 +10,10 @@
 //Server.default.reboot;
 ServerOptions.devices;
 //Server.default.options.device = "HD 4.50BTNC";
-//Server.default.options.device = "UMC404HD 192k";
+Server.default.options.device = "UMC404HD 192k";
 //Server.default.options.device = "Jabra EVOLVE 20 MS";
-
-
 //Server.default.options.device = "Built-in Output";
-Server.default.options.device = "SC";
+//Server.default.options.device = "SC";
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
 
@@ -38,12 +36,6 @@ MIDIIn.connectAll;
 
 
 ~delayTime = 0.33;
-
-l = List.new();
-l = List[3,5,2,35,34,234,2355,3];
-
-l.size;
-
 
 ~activenotes = nil!128; //make Array of 128 slots, initially with nil objects in to represent nothing
 
@@ -102,7 +94,7 @@ MIDIdef.noteOn(\noteOn,{
 
 	~releasefunction.value(num);
 
-	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \decay, ~decay, \pan, 0.5.rand2, \freq,num.midicps, \filterFreq, ~filterFreq, \detune,~detune]);
+	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \decay, ~decay, \pan, 0.5.rand2, \freq,num.midicps, \filterFreq, ~filterFreq, \squareVol, ~squareVol, \detune,~detune]);
 
 	//num.midicps.postln;
 
@@ -140,6 +132,7 @@ MIDIdef.noteOff(\noteOff,{
 
 ~previousSustainValue;
 ~detune = 0.2;
+~squareVol = 0.5;
 
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
@@ -184,13 +177,16 @@ MIDIdef.cc(\ccFunc, {
 
 
 	if(chan == 21) {
-		~fx.set(\delayTime,ccNum.linexp(0,127,0.01,4));
+		~fx.set(\delayTime,ccNum.linexp(0,127,0.001,4));
 	};
 
 	if(chan == 17) {
-		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.5,64));
+		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,128));
 	};
 
+	if(chan == 20) {
+		~squareVol = ccNum.linexp(0,127,0.1,0.8);
+	};
 
 
 
@@ -199,7 +195,7 @@ MIDIdef.cc(\ccFunc, {
 
 SynthDef.new(\tone, {
 
-	arg freq=40, nharm=12, filterFreq = 12000, detune=0.2, pan=0, vol=1, out=0, decay = 0.1, gate=1;
+	arg freq=40, nharm=12, filterFreq = 12000, squareVol = 0.5, detune=0.2, pan=0, vol=1, out=0, decay = 0.1, gate=1;
 	var sig, env, plunk, plunkEnv;
 
 	//env = EnvGen.kr(Env.adsr(0.5,0.1, 0.5, 1),gate,doneAction: 2);
@@ -238,7 +234,8 @@ SynthDef.new(\tone, {
 // +  vol.linexp(0,127,100,1200)
 
 
-	//sig = Pulse.ar(freq * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).);
+	//square wave octave below.
+	sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
 
 	//assign each of the 16 voices a different amplitude
 	sig = sig * LFNoise1.kr(1!16).exprange(0.2,1);
@@ -254,24 +251,27 @@ SynthDef.new(\tone, {
 }).add;
 
 // FreeVerb2 - demo synthdef
-SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0, delayTime=0.33, delayFeedback=8|
+SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, delayTime=0.33, delayFeedback=8|
     var signal, signalToCompress;
 
-    signal = In.ar(out, 2);
+	//signal = SplayAz.ar(out,In.ar(0, 2));
+	signal = In.ar(out, 2);
 
     ReplaceOut.ar(out,
 		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
 
 		//signal = signal + CombN.ar(signal, 1.5, {Rand([0.25,0.5,0.75,1.5])}, 3)!2;
 
-		signal = signal + CombN.ar(signal, 1.5, delayTime, {delayTime * delayFeedback});
+		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * 0.5);
 
 
-      signalToCompress = FreeVerb2.ar( // FreeVerb2 - true stereo UGen
+      signalToCompress = FreeVerb2.ar(
+			// FreeVerb2 - true stereo UGen
             signal[0], // Left channel
             signal[1], // Right Channel
             mix, room, damp, amp
         );
+
 
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
@@ -302,7 +302,8 @@ SynthDef(\rezo,{arg freq=440, amp=0.1, gate=1;
 fork {
 	3.wait;
 // kick it in
-~fx = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
+	~fx = Synth(\FreeVerb2x2);
+//~fx = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 // experiment with some settings
 ~fx.set(\room, 8);
 //z.set(\mix, 0.25);
