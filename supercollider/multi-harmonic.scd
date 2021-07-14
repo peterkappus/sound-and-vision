@@ -16,8 +16,7 @@ ServerOptions.devices;
 
 //aggregated device provides stereo for streaming [0,1] AND 4 outpus of U-Phoria [2,3,4,5]
 Server.default.options.device = "SC";
-s.options.numOutputBusChannels=20; //4 channels for UMC404HD + 16 channels for BlackHole audio driver
-//s.options.numOutputBusChannels=6;
+s.options.numOutputBusChannels=6; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
 
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
@@ -301,7 +300,7 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
     var signal, signalToCompress;
 
 	//signal = SplayAz.ar(out,In.ar(0, 2));
-	signal = In.ar(out, 2);
+	signal = In.ar(out, 20); //Grab up to 20 channels in case we have multiple devices (see the SC aggregated device)
 
 	//use [0,2] to
 	ReplaceOut.ar([0,2],
@@ -357,7 +356,7 @@ fork {
 	~fx = Synth(\FreeVerb2x2);
 //~fx = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 // experiment with some settings
-~fx.set(\room, 12);
+~fx.set(\room, 1);
 //z.set(\mix, 0.25);
 //z.set(\damp, 0.2);
 };

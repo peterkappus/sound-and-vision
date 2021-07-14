@@ -31,11 +31,11 @@ You should now hear SC audio through GarageBand. This means you can record it. Y
 
 ## Video capture & formatting tips (e.g. for Instagram)
 1. Need sound? 
-2. Install the [BlackHole](https://github.com/ExistentialAudio/BlackHole) audio driver
-3. Select "blackhole 16 ch" as the audio output (from the menu bar icon)
+2. Install the [BlackHole](https://github.com/ExistentialAudio/BlackHole) audio driver and restart your mac
+3. Select "blackhole 2 ch" as the audio output (from the menu bar icon)
 2. Open Quicktime Player
 2. Select "New Screen Recording"
-2. Select "Blackhole 16" as audio source
+2. Select "Blackhole 2ch" as audio source
 2. Choose an area of the screen to capture
 2. Play your video...
 2. Trim it in quicktime and save it
