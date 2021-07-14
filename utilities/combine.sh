@@ -1,19 +1,13 @@
 #!/bin/bash
 
-# This script combines an audio and video file into a single video trimming to the length of the shorter item
-
-#parameter 1 is the audio file
 audio=$1;
-
-#parameter 2 is the video file
 video=$2;
 
 trimmed_audio="trimmed_$audio";
 
-out_video="video_"$(date +%Y-%m-%dT%H%M)".m4a" 
+out_video="video_"$(date +%Y-%m-%dT%H%M)".mp4" 
 
-# strip science at the beginning and end
-# TODO: use a docker instance for folks who don't have sox installed locally
+#strip science at the beginning and end
 #sox $audio $trimmed_audio silence 1 0.1 0.002% 1 0.1 0.03%
 sox $audio $trimmed_audio silence 1 0.1 0.05% 1 0.1 0.03%
 #sox $audio $trimmed_audio silence 1 0.1 0.002% 1 0.1 3% compand 0.3,1 6:−70,−60,−20 −5 −90 0.2
@@ -21,8 +15,15 @@ sox $audio $trimmed_audio silence 1 0.1 0.05% 1 0.1 0.03%
 
 #use docker and combine audio & video
 #-shortest flag cuts to length of shortest asset
-docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg -y -i /data/$video -i /data/$trimmed_audio -shortest /data/$out_video
+#d=X (fade-in time)
+#start fading at 14 seconds (duration: 1 second)
+#limit to 15 seconds long (-t 00:00:15)
+docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg -y -i /data/$video -i /data/$trimmed_audio -vf "fade=t=in:st=0:d=0.5,fade=t=out:st=14:d=0.5" -af "afade=t=out:st=14:d=0.5" -t 00:00:15 -shortest /data/$out_video
 
-#copy to my iCloud drive 
-# TODO: check if the user has one of these...
-cp $out_video /Users/$USER/Library/Mobile\ Documents/com~apple~CloudDocs/$out_video
+# colorkey compositing....
+#ffmpeg -i <base-video> -i <overlay-video> -filter_complex '[1:v]colorkey=0x<color>:<similarity>:<blend>[ckout];[0:v][ckout]overlay[out]' -map '[out]' <output-file>
+  
+#ffmpeg -i video.mp4 -vf "fade=t=in:st=0:d=3" -c:a copy out.mp4
+
+#copy to iCloud account
+cp $out_video /Users/peterk/Library/Mobile\ Documents/com~apple~CloudDocs/$out_video

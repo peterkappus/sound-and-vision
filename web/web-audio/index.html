@@ -24,7 +24,8 @@ var context=null;   // the Web Audio "context" object
 
       // set up the basic oscillator chain, muted to begin with.
       oscillator = context.createOscillator();
-      oscillator.type = "sawtooth";
+      //oscillator.type = "sawtooth";
+      
       oscillator.frequency.setValueAtTime(110, 0);
       envelope = context.createGain();
       oscillator.connect(envelope);

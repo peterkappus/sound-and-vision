@@ -30,13 +30,27 @@ You should now hear SC audio through GarageBand. This means you can record it. Y
 
 
 ## Video capture & formatting tips (e.g. for Instagram)
-1. Capture video with Quicktime Player
-2. Need to crop a a video to 720p? Use an FFMPEG Docker image:
-`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/INPUT_FILE_GOES_HERE.mov -vf "scale=480:720:force_original_aspect_ratio=decrease,pad=480:720:(ow-iw)/2:(oh-ih)/2,setsar=1" -ac 2 /data/OUTPUT_FILE_GOES_HERE.mp4`
-The above will crop to 480:720 (great for Instagram) and add padding if required. Also *IMPORTANT* the "-ac 2" bit converts my weird quad audio (from my audio interface) into stereo. Otherwise, you won't get any sound on Instagram. (the horror!)
-Or just crop (no scaling... probably better quality): `ffmpeg -i in.mp4 -filter:v "crop=1280:720:0:0" -c:a copy out.mp4`
+1. Need sound? 
+2. Install the [BlackHole](https://github.com/ExistentialAudio/BlackHole) audio driver
+3. Select "blackhole 16 ch" as the audio output (from the menu bar icon)
+2. Open Quicktime Player
+2. Select "New Screen Recording"
+2. Select "Blackhole 16" as audio source
+2. Choose an area of the screen to capture
+2. Play your video...
+2. Trim it in quicktime and save it
 
-TODO:  put the above into a bash file for easy automation. Maybe make a README just for FFMPEG tips...
+
+## Preparing a video for Instagram (720p):
+
+1. save video in "captures" folder
+2. in terminal: "./utilities/prep_for_insta.sh <INPUT_FILE_PATH> <FADE_START_TIME> <FADE_DURATION>
+3. TIP: Use a start time longer than the duration of your clip if you don't want a fade...
+4. Open "iCloud Drive" on your phone
+5. View the video file
+6. Save it to your camera roll
+7. Open Instagram and add to your stories, or create a new post
+8. Find the video in your camera roll
 
 ## Local Development
 

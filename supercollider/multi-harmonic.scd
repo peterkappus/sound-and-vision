@@ -4,32 +4,51 @@
 //transcribed from this: https://www.youtube.com/watch?v=ZVTbRNu2BI0
 
 //slick way to open audio settings from SC...
-//"open -a 'Audio MIDI Setup'".unixCmd; // execute this to launch it
+"open -a 'Audio MIDI Setup'".unixCmd; // execute this to launch it
 
 
 //Server.default.reboot;
 ServerOptions.devices;
 //Server.default.options.device = "HD 4.50BTNC";
-Server.default.options.device = "UMC404HD 192k";
+//Server.default.options.device = "UMC404HD 192k";
 //Server.default.options.device = "Jabra EVOLVE 20 MS";
 //Server.default.options.device = "Built-in Output";
-//Server.default.options.device = "SC";
+
+//aggregated device provides stereo for streaming [0,1] AND 4 outpus of U-Phoria [2,3,4,5]
+Server.default.options.device = "SC";
+s.options.numOutputBusChannels=20; //4 channels for UMC404HD + 16 channels for BlackHole audio driver
+//s.options.numOutputBusChannels=6;
+
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
+
+// Not using this, yet...
+/*
+//cleanup
+Pdef.all.do(_.clear);
+Pbindef.all.do(_.clear);
+~wt_buf.do(_.free);
+t.stop;
+
+//initialization
+s = Server.local;
+t = TempoClock.new(90/60).permanent_(true);
+s.newBusAllocators;
+~rbus = Bus.audio(s,2);
+*/
+
 
 Server.killAll;
 s.boot;
 
-//s = Server.local;
+// **** MIDI SETUP ***
 
-//midi stuff
 //initialize a midi client
 MIDIClient.init;
 
 //connect all the possible inputs
 MIDIIn.connectAll;
 
-~decay = 0.8;
 ~filterFreq = 8000;
 ~sustainValue = 0;
 ~fx;
@@ -67,20 +86,23 @@ MIDIIn.connectAll;
 };
 
 ~broadcastParam = {|key, value|
+
 	//update all sustained notes
 	for(0,~notes.size-1, {|i|
 		~notes[i].set(key,value);
 	});
+
 	//and any we're just playing...
 	for(0,~activenotes.size-1, {|i|
-		~activenotes[i].set(key,value);
+		if(~activenotes[i].notNil) {
+			~activenotes[i].set(key,value);
+		}
 	});
 };
 
 
 ~isSustained = {
 	(~sustainValue > 0);
-	//false;
 };
 
 MIDIdef.noteOn(\noteOn,{
@@ -92,9 +114,12 @@ MIDIdef.noteOn(\noteOn,{
 	//~bandwidth.postln;
 
 
-	~releasefunction.value(num);
+	//~releasefunction.value(num);
 
-	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \decay, ~decay, \pan, 0.5.rand2, \freq,num.midicps, \filterFreq, ~filterFreq, \squareVol, ~squareVol, \detune,~detune]);
+	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \pan, 0.7.rand2, \freq,num.midicps, \filterFreq, ~filterFreq, \squareVol, ~squareVol, \detune,~detune]);
+
+	//synth = Synth.new(\randHarm, [\freq, num.midicps]);
+
 
 	//num.midicps.postln;
 
@@ -120,10 +145,12 @@ MIDIdef.noteOn(\noteOn,{
 MIDIdef.noteOff(\noteOff,{
 	arg src,num,chan, vol;
 
+	//if we release a note but the sustain pedal is pressed,
+	//then transfer these notes to a sustained array to release when we release the pedal
 	if(~isSustained.value(0)) {
-		//transfer notes to sustained array "notes"
 		~notes.add(~activenotes[num]);
 	} {
+		//otherwise, just release as normal
 		~releasefunction.value(num);
 	}
 
@@ -132,7 +159,7 @@ MIDIdef.noteOff(\noteOff,{
 
 ~previousSustainValue;
 ~detune = 0.2;
-~squareVol = 0.5;
+~squareVol = 0;
 
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
@@ -146,28 +173,23 @@ MIDIdef.cc(\ccFunc, {
 
 		//are we letting go?
 		if(~sustainValue < ~previousSustainValue) {
+			//release all sustained notes
 			~releasefunction.value();
 		}
 	};
 
-	//change room size by tweaking ANY controller
-	if(chan == 24) {
-		~fx.set(\room, ccNum.linexp(0,127,0.01,15));
-	};
-
-
 	if(chan == 20) {
-		~decay = ccNum.linexp(0,127,0.01,2);
+		~fx.set(\room, ccNum.linexp(0,127,0.01,30));
 	};
 
-	if(chan == 1) {
+	if(chan == 19) {
 		~filterFreq = ccNum.linexp(0,127,200,12000);
 
 		//update held notes
 		~broadcastParam.value(\filterFreq,~filterFreq);
 	};
 
-
+	//central fader
 	if(chan == 41) {
 		~detune = ccNum.linexp(0,127,0.1,1.2);
 
@@ -175,44 +197,35 @@ MIDIdef.cc(\ccFunc, {
 		~broadcastParam.value(\detune,~detune);
 	};
 
-
-	if(chan == 21) {
-		~fx.set(\delayTime,ccNum.linexp(0,127,0.001,4));
-	};
-
 	if(chan == 17) {
-		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,128));
+		~fx.set(\delayTime,ccNum.linexp(0,127,0.0001,4));
 	};
 
-	if(chan == 20) {
-		~squareVol = ccNum.linexp(0,127,0.1,0.8);
+	if(chan == 18) {
+		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,1280));
 	};
 
-
+	if(chan == 24) {
+		~squareVol = ccNum.linexp(0,127,0.1,0.7);
+	};
 
 });
 
 
 SynthDef.new(\tone, {
 
-	arg freq=40, nharm=12, filterFreq = 12000, squareVol = 0.5, detune=0.2, pan=0, vol=1, out=0, decay = 0.1, gate=1;
-	var sig, env, plunk, plunkEnv;
+	arg freq=40, nharm=12, filterFreq = 12000, squareVol = 0, detune=0.2, pan=0, vol=1, out=0,gate=1;
+	var sig, env, plunk, plunkEnv, sum, temp;
 
-	//env = EnvGen.kr(Env.adsr(0.5,0.1, 0.5, 1),gate,doneAction: 2);
-	//env = EnvGen.ar(Env([0,1,0],[0.001,decay]),doneAction:2);
 	env= EnvGen.ar(Env.asr(0.001,1.0,0.25),gate,doneAction:2);
 
-
-	//env = XLine.kr(1,0,0.5,doneAction: 2);
 	//pan = freq.linlin(30,4000,-0.5,0.5);
-
-	//pan = 0;
 
 	//sig = Blip.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio,nharm);
 	//sig = sig + SinOsc.ar(freq) * 0.5;
 
 
-	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio);
+	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.6;
 
 	//harmonic
 	//sig = sig +  SinOsc.ar(freq * 3/2 * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
@@ -228,7 +241,7 @@ SynthDef.new(\tone, {
 
 	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
-	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.8) * 0.5;
+	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.8) * 0.4;
 
 	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
@@ -237,18 +250,51 @@ SynthDef.new(\tone, {
 	//square wave octave below.
 	sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
 
+
+	/*
+	10.do {
+		sum = 0;
+		temp = VarSaw.ar(
+			freq * {Rand(0.99,1.01)}!2,
+			{Rand(0.0,1.0)}!2,
+			{ExpRand(0.005,0.05)}!2
+		);
+		sum = sum + temp;
+	};
+	sig = sum * 0.5 * env;
+	*/
+
+
 	//assign each of the 16 voices a different amplitude
-	sig = sig * LFNoise1.kr(1!16).exprange(0.2,1);
+	//sig = sig * LFNoise1.kr(1!16).exprange(0.2,1);
 
 	sig = Splay.ar(sig);
 	sig = Balance2.ar(sig[0],sig[1],pan);
 	sig = sig * env * vol;
 
 
+	sig = LeakDC.ar(sig);
+
+
 	//Out.ar(out,Mix.new([sig,plunk]));
 	Out.ar(out,sig);
 
 }).add;
+
+
+//https://www.youtube.com/watch?v=fAXETAyrv8s&list=PLPYzvS8A_rTaNDweXe6PX4CXSGq4iEWYC&index=6
+SynthDef(\randHarm, {
+	arg out = 0, gate = 1, freq = 440;
+	var sig, amp, env;
+	env= EnvGen.ar(Env.asr(0.001,1.0,0.25),gate,doneAction:2);
+	amp = SinOsc.kr({ExpRand(0.2,12)}!8).range(0.1);
+	sig = SinOsc.ar({ExpRand(freq,freq * 2.5)}!8);
+	sig = sig * amp * env;
+	sig = Splay.ar(sig) * 0.5;
+	Out.ar(0,sig);
+}).add;
+
+
 
 // FreeVerb2 - demo synthdef
 SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, delayTime=0.33, delayFeedback=8|
@@ -257,15 +303,17 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
 	//signal = SplayAz.ar(out,In.ar(0, 2));
 	signal = In.ar(out, 2);
 
-    ReplaceOut.ar(out,
+	//use [0,2] to
+	ReplaceOut.ar([0,2],
 		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
 
 		//signal = signal + CombN.ar(signal, 1.5, {Rand([0.25,0.5,0.75,1.5])}, 3)!2;
 
-		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * 0.5);
+		//stereo delay
+		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * 0.7);
 
 
-      signalToCompress = FreeVerb2.ar(
+		signalToCompress = FreeVerb2.ar(
 			// FreeVerb2 - true stereo UGen
             signal[0], // Left channel
             signal[1], // Right Channel
@@ -273,21 +321,25 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
         );
 
 
+		//signalToCompress = signal;
+
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
-			thresh: 0.7,
+			thresh: 0.6,
 			slopeBelow: 1,
 			slopeAbove: 200,
 			clampTime:  0.01,
 			relaxTime:  0.01,
-			mul: 1.2
+			mul: 1.25
 		);
 
 	); // same params as FreeVerb 1 chn version
 
 }).add;
 
-s.meter;
+
+//s.meter(5,4);
+
 SynthDef(\rezo,{arg freq=440, amp=0.1, gate=1;
 	var saw, filter, env;
 
@@ -305,10 +357,30 @@ fork {
 	~fx = Synth(\FreeVerb2x2);
 //~fx = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 // experiment with some settings
-~fx.set(\room, 8);
+~fx.set(\room, 12);
 //z.set(\mix, 0.25);
 //z.set(\damp, 0.2);
-}
+};
+
+
+
+//player...
+/*
+~p = Pbind(
+        // the name of the SynthDef to use for each note
+    \instrument, \tone,
+        // MIDI note numbers -- converted automatically to Hz
+    \midinote, Pseq([20,28,35,40,48,55,60], inf),
+        // rhythmic values
+    \dur, Pseq([0.10], inf),
+	\vol, 0.1
+).play;
+*/
+
+
+
+
+
 )
 
 

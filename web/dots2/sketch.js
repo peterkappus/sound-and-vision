@@ -16,14 +16,23 @@ var susPercent = 1;
 var releaseTime = 0.1;
 var octaves = 5;
 
-var cols = 7;
+var cols = 5;
 
+var colors;
+var bgColorStr;
+
+colors = "#fc0,#ff5c00,#0066ff,#ee1111,#ff2e00".split(","); //hot calder colours
+//bgColorStr = "#362d20";
+
+//colors = "#ffe,#0af".split(","); //hot calder colours
+bgColorStr = "#003399";
 
 //var notes = [0,6,7,9,12,14,16,19,24];
+
 //var notes = [ 0, 2, 4, 7, 9, 11 ];
 //var notes = [0, 2, 4, 7, 9, 11, 14];
 
-var notes = [0,1,3,7,8]; //Pelog
+var notes = [0,1,3,7,8]; //Pelog/gamelan
 
 //notes = [0,2,4,5,8];
 //var notes = [0,5,7];
@@ -43,14 +52,12 @@ var frameInterval = 10;
 var frame = 0;
 var i = 0;
 
-var bgColor; 
+var bgColor;
 
-//my hot calder colors
-var colors = "#fc0,#ff5c00,#0066ff,#ee1111,#ff2e00".split(",");
-
-
+var filter;
+  
 function setup() {
-  bgColor = color("#362d20");
+  bgColor = color(bgColorStr);
   background(bgColor);      
 
   createCanvas(window.innerWidth, window.innerHeight);
@@ -71,17 +78,44 @@ function setup() {
 }
 
 function getOsc(envelope) {
-  var myOsc = new p5.Oscillator('sine');
-  myOsc.amp(envelope);
-
+  var myOsc = new p5.Oscillator('sin');
+  myOsc.amp(envelope)
+  
   reverb = new p5.Reverb();
   reverb.process(myOsc,reverbTime,1);
+
+  /*filterFreq = constrain(filterFreq, 0, 22050);
+  filter.freq(filterFreq);
+  */
+
+  
+  //filter = new p5.BandPass();
+  //filter = new p5.LowPass();
+  //filter.freq(1000);
+  /*let filterFreq = map(mouseX, 0, width, 20, 10000);
+  filterFreq = constrain(filterFreq, 0, 22050);
+  filter.freq(filterFreq);
+  
+
+  // give the filter a narrow band (lower res = wider bandpass)
+  filter.res(20);
+  myOsc.connect(filter);
+  */
+
 
   return(myOsc);
 }
 
 
 function draw() {
+
+  /*let filterFreq = map(mouseX, 0, width, 20, 10000);
+  filterFreq = constrain(filterFreq, 0, 22050);
+  filter.freq(filterFreq);
+  // give the filter a narrow band (lower res = wider bandpass)
+  filter.res(50);
+*/
+
   //var index = Math.round(random(notes.length));
 
   if(playing && frame % frameInterval == 0) {
@@ -158,7 +192,7 @@ function draw() {
   }
 
   //fade....
-  fill(color(bgColor._getRed(),bgColor._getGreen(),bgColor._getBlue(),15));
+  fill(color(bgColor._getRed(),bgColor._getGreen(),bgColor._getBlue(),5));
   //fill("rgba(0,0,0,5)");
   rect(0,0,width,height);
 
