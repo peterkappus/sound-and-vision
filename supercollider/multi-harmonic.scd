@@ -118,7 +118,7 @@ MIDIdef.noteOn(\noteOn,{
 	synth = Synth.new(\tone, [
 		\vol,vol,
 		\nharm, veloc.linexp(0,127,1,5),
-		\pan, 0.7.rand2,
+		\pan, 0.8.rand2,
 		\freq,num.midicps,
 		\filterFreq, ~filterFreq,
 		\squareVol, ~squareVol,
@@ -215,6 +215,11 @@ MIDIdef.cc(\ccFunc, {
 		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,1280));
 	};
 
+
+	if(chan == 23) {
+		~fx.set(\delayMix,ccNum.linexp(0,127,0.1,0.55));
+	};
+
 	if(chan == 24) {
 		~squareVol = ccNum.linexp(0,127,0.1,0.7);
 
@@ -265,7 +270,7 @@ SynthDef.new(\tone, {
 
 	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
-	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.8) * 0.4;
+	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!4).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.8) * 0.4;
 
 	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
@@ -321,7 +326,10 @@ SynthDef(\randHarm, {
 
 
 // FreeVerb2 - demo synthdef
-SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, delayTime=0.33, delayFeedback=8|
+SynthDef(\FreeVerb2x2, {
+
+	arg out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, delayMix = 0.7, delayTime=0.33, delayFeedback=8;
+
     var signal, signalToCompress;
 
 	//signal = SplayAz.ar(out,In.ar(0, 2));
@@ -331,10 +339,8 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
 	ReplaceOut.ar([0,2],
 		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
 
-		//signal = signal + CombN.ar(signal, 1.5, {Rand([0.25,0.5,0.75,1.5])}, 3)!2;
-
 		//stereo delay
-		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * 0.7);
+		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
 
 
 		signalToCompress = FreeVerb2.ar(
@@ -343,9 +349,6 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
             signal[1], // Right Channel
             mix, room, damp, amp
         );
-
-
-		//signalToCompress = signal;
 
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
@@ -364,6 +367,7 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
 
 //s.meter(5,4);
 
+//unused...
 SynthDef(\rezo,{arg freq=440, amp=0.1, gate=1;
 	var saw, filter, env;
 
@@ -375,6 +379,7 @@ SynthDef(\rezo,{arg freq=440, amp=0.1, gate=1;
 }).add;
 
 
+//fork a new process for our reverb... can't remember why.
 fork {
 	3.wait;
 // kick it in
@@ -394,7 +399,7 @@ fork {
         // the name of the SynthDef to use for each note
     \instrument, \tone,
         // MIDI note numbers -- converted automatically to Hz
-    \midinote, Pseq([20,28,35,40,48,55,60], inf),
+    \midinote, Pseq([60, 65, 72], inf),
         // rhythmic values
     \dur, Pseq([0.10], inf),
 	\vol, 0.1
