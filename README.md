@@ -41,7 +41,7 @@ You should now hear SC audio through GarageBand. This means you can record it. Y
 2. Trim it in quicktime and save it
 
 
-## Preparing a video for Instagram (720p):
+## Preparing a video for Instagram:
 
 1. save video in "captures" folder
 2. in terminal: "./utilities/prep_for_insta.sh <INPUT_FILE_PATH> <FADE_START_TIME> <FADE_DURATION>

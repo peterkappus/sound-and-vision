@@ -110,16 +110,16 @@ WebMidi.enable(function (err) {
 
 
 function noteOn (e) {
-          if(random() < 0.1) {
-            for(var i =0; i < random(8); i++){
-              circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],random(0.2,0.7)));
-            }
-          }else{
-            circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],1));
-          }
-          
-          //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
-        }
+  if(random() < 0.1) {
+    for(var i =0; i < random(8); i++){
+      circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],random(0.2,0.7)));
+    }
+  }else{
+    circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],1));
+  }
+  
+  //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
+}
 
 function respondToControllerChange(e) {
   var controllerNumber = e.controller.number;
@@ -164,11 +164,6 @@ function debug(msg){
 }
 
 function draw() {
-  //FUN-> turn this off to "paint"
-  
-  //background(bgLightness,bgAlphaFactor * 255);
-  
-   //colorMode(HSB);
    background(getParam("red"),getParam("green"),getParam("blue"), map(getParam("bgAlphaFactor"),0,255,24,0));
    
   //gradually fade to black
@@ -244,6 +239,7 @@ class Circ{
     //this.fill *= 0.9999;
     this.y += this.dy 
     this.x += this.dx;
+    //Gently wander side to side
     this.dx = 1.2 * map(noise(randSeed + this.x * 0.001, this.y * 0.001),0,1,-2,2);
     //accelerate
     this.dy *= 1.002 ;// * (this.y * 0.0001);        

@@ -115,7 +115,17 @@ MIDIdef.noteOn(\noteOn,{
 
 	//~releasefunction.value(num);
 
-	synth = Synth.new(\tone, [\vol,vol, \nharm, veloc.linexp(0,127,1,5), \pan, 0.7.rand2, \freq,num.midicps, \filterFreq, ~filterFreq, \squareVol, ~squareVol, \detune,~detune]);
+	synth = Synth.new(\tone, [
+		\vol,vol,
+		\nharm, veloc.linexp(0,127,1,5),
+		\pan, 0.7.rand2,
+		\freq,num.midicps,
+		\filterFreq, ~filterFreq,
+		\squareVol, ~squareVol,
+		\detune,~detune,
+		\attack, ~attack,
+		\release, ~release
+	]);
 
 	//synth = Synth.new(\randHarm, [\freq, num.midicps]);
 
@@ -159,6 +169,7 @@ MIDIdef.noteOff(\noteOff,{
 ~previousSustainValue;
 ~detune = 0.2;
 ~squareVol = 0;
+~release = 0.001;
 
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
@@ -206,17 +217,31 @@ MIDIdef.cc(\ccFunc, {
 
 	if(chan == 24) {
 		~squareVol = ccNum.linexp(0,127,0.1,0.7);
+
+		//update held notes
+		~broadcastParam.value(\squareVol,~squareVol);
 	};
+
+	if(chan == 21) {
+		~attack = ccNum.linexp(0,127,0.0001,5);
+	};
+
+	if(chan == 22) {
+		~release = ccNum.linexp(0,127,0.01,10);
+		//update held notes
+		~broadcastParam.value(\release,~release);
+	};
+
 
 });
 
 
 SynthDef.new(\tone, {
 
-	arg freq=40, nharm=12, filterFreq = 12000, squareVol = 0, detune=0.2, pan=0, vol=1, out=0,gate=1;
+	arg freq=40, nharm=12, filterFreq = 12000, squareVol = 0, detune=0.2, pan=0, vol=1, out=0,gate=1, attack = 0.001, release= 2.5;
 	var sig, env, plunk, plunkEnv, sum, temp;
 
-	env= EnvGen.ar(Env.asr(0.001,1.0,0.25),gate,doneAction:2);
+	env= EnvGen.ar(Env.asr(attack,1.0,release),gate,doneAction:2);
 
 	//pan = freq.linlin(30,4000,-0.5,0.5);
 
@@ -300,7 +325,7 @@ SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.1, amp = 1.0, d
     var signal, signalToCompress;
 
 	//signal = SplayAz.ar(out,In.ar(0, 2));
-	signal = In.ar(out, 20); //Grab up to 20 channels in case we have multiple devices (see the SC aggregated device)
+	signal = In.ar(out, 2); //Grab up to 20 channels in case we have multiple devices (see the SC aggregated device)
 
 	//use [0,2] to
 	ReplaceOut.ar([0,2],
@@ -356,7 +381,7 @@ fork {
 	~fx = Synth(\FreeVerb2x2);
 //~fx = Synth(\FreeVerb2x2, [\outbus, 0], addAction:\addToTail);
 // experiment with some settings
-~fx.set(\room, 1);
+//~fx.set(\room, 1);
 //z.set(\mix, 0.25);
 //z.set(\damp, 0.2);
 };
