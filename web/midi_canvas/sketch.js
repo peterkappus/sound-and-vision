@@ -208,28 +208,34 @@ class MyLine {
 
     this.color = color(255);
     //lowest note on 88 key keyboard is 21, highest is 108 (on my kawai anyway...)
-    this.y = map(this.note,21,108,height, 0);
+    this.y = map(this.note,21,108,height, height/2) ;
+    this.x = map(this.note,21,108,0,width);
     console.log(this.note);
     //this.dy = random(-0.1,0.5);
     this.dy = random(-1.0,-0.05);
     this.alpha = 255;
-    this.life = 1;
+    this.life = 1 ;
+    this.rad = map(this.vel,0,1,height/500,height/20);
   }
 
   draw() {
     stroke(this.color);
-    strokeWeight(10 * this.life);
+    strokeWeight(this.life * 3);
     //stroke(5,1500 * sq(this.life));
     line(0,this.y, width, this.y);
-    ellipse(100,this.y,50,50);
+
+    fill(0);
+    ellipse(this.x,this.y,this.rad);
     //console.log('draw!');
     //console.log(this.y);
   }
 
   step() {
     this.y += this.dy;
-    this.life *= map(getParam("longevityFactor"),0,255,0.999,0.99999);
-    this.alpha *= this.life;//map(getParam("dAlpha"),0,255,254,255) * this.life;
+    //this.life *= map(getParam("longevityFactor"),0,255,0.999,0.99999);
+    this.life *= 0.999;
+    this.alpha = 255 * this.life;//map(getParam("dAlpha"),0,255,254,255) * this.life;
+    this.dy *= 1.001;
 
   }
 }

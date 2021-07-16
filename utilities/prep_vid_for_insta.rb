@@ -17,8 +17,10 @@ output_file ="video_#{`date +%Y-%m-%dT%H%M`.chomp}.mp4"
 #docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/$1 -af "afade=t=out:st=$fadestart:d=$fadeDuration" -vf "fade=t=out:st=$fadestart:d=$fadeDuration,scale=$dimensions:force_original_aspect_ratio=decrease,pad=$dimensions:(ow-iw)/2:(oh-ih)/2,setsar=1" -ac 2 /data/$out_video
 #The above will crop to $dimensions and add padding if required
 #Or just crop (no scaling... probably better quality): `ffmpeg -i in.mp4 -filter:v "crop=$dimensions:0:0" -c:a copy out.mp4`
-`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/#{input_file} -af "afade=t=out:st=#{fade_start}:d=#{fade_duration}" -vf "fade=t=out:st=#{fade_start}:d=#{fade_duration},crop=#{dimensions}" -t #{total_duration} -ac 2 /data/#{output_file}`
+#`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/#{input_file} -af "afade=t=out:st=#{fade_start}:d=#{fade_duration}" -vf "fade=t=out:st=#{fade_start}:d=#{fade_duration},crop=#{dimensions}" -t #{total_duration} -ac 2 /data/#{output_file}`
 #`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/#{input_file} -t #{end_time} -ac 2 /data/#{output_file}`
+
+`docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg  -i /data/#{input_file} -af "compand=.3|.3:1|1:-90/-60|-60/-40|-40/-30|-20/-20:6:5:-90:0.2,afade=t=out:st=#{fade_start}:d=#{fade_duration}" -vf "fade=t=out:st=#{fade_start}:d=#{fade_duration},crop=#{dimensions}" -t #{total_duration} -ac 2 /data/#{output_file}`
 
 #copy to our icloud files
 `cp #{output_file} "/Users/peterk/Library/Mobile\ Documents/com~apple~CloudDocs/instagram/#{output_file}"`

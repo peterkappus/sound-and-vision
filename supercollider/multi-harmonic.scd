@@ -16,7 +16,7 @@ ServerOptions.devices;
 
 //aggregated device provides stereo for streaming [0,1] AND 4 outpus of U-Phoria [2,3,4,5]
 Server.default.options.device = "SC";
-s.options.numOutputBusChannels=8; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
+s.options.numOutputBusChannels=4; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
 
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
@@ -36,8 +36,10 @@ s.newBusAllocators;
 ~rbus = Bus.audio(s,2);
 */
 
-
+//kill any running server
 Server.killAll;
+
+//reboot a fresh server
 s.boot;
 
 // **** MIDI SETUP ***
@@ -266,7 +268,7 @@ SynthDef.new(\tone, {
 	//~gendy =  Gendy1.ar(5.rand, 6.rand,0.95,0.95,freq/2 *0.99, freq/2 * 1.01, 0.05,0.08) * 0.5;
 
 	//env for filter...
-	~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
+	//~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
 	~filterEnv= EnvGen.ar(Env.perc(0.005,1,1,-3));
 
