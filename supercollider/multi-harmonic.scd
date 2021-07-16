@@ -217,11 +217,11 @@ MIDIdef.cc(\ccFunc, {
 
 
 	if(chan == 23) {
-		~fx.set(\delayMix,ccNum.linexp(0,127,0.1,0.55));
+		~fx.set(\delayMix,ccNum.linexp(0,127,0.025,0.65));
 	};
 
 	if(chan == 24) {
-		~squareVol = ccNum.linexp(0,127,0.1,0.7);
+		~squareVol = ccNum.linexp(0,127,0.001,0.6);
 
 		//update held notes
 		~broadcastParam.value(\squareVol,~squareVol);
@@ -281,6 +281,7 @@ SynthDef.new(\tone, {
 	//square wave octave below.
 	sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
 
+	//sig = sig + (RLPF.ar(Pulse.ar(freq/2 * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).midiratio), filterFreq,0.5) * 0.3 * squareVol);// * LFNoise1.kr(0.1
 
 	/*
 	10.do {
