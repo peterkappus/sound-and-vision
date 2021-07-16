@@ -59,7 +59,7 @@ var colorStrings = [
 var colors = [];
 //var colors = ["#eee","#aaa","#111","#333"];
 
-var circs = [];
+var objects = [];
 
 function setup() {
   bg = color(255,253,0,255);
@@ -110,13 +110,18 @@ WebMidi.enable(function (err) {
 
 
 function noteOn (e) {
-  if(random() < 0.1) {
+  
+  //occasionally make a burst of many circles
+  /*if(random() < 0.1) {
     for(var i =0; i < random(8); i++){
-      circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],random(0.2,0.7)));
+      objects.push(new Circ(e.note.number,e.velocity,objects[objects.length-1],random(0.2,0.7)));
     }
   }else{
-    circs.push(new Circ(e.note.number,e.velocity,circs[circs.length-1],1));
+    objects.push(new Circ(e.note.number,e.velocity,objects[objects.length-1],1));
   }
+  */
+
+  objects.push(new MyLine(e.note.number, e.velocity));
   
   //console.log("Received 'noteon' message (" + e.note.name + e.note.octave + " " + e.note.number + " " + e.velocity + ").");
 }
@@ -170,18 +175,18 @@ function draw() {
   //background(bgColor *= 0.999);
   
   //first draw & move 'em
-  for(var i in circs){
-    circs[i].draw();
-    circs[i].step();
+  for(var i in objects){
+    objects[i].draw();
+    objects[i].step();
   }
   
   //in a separate loop, delete the ones which have wandered off screen... otherwise flickering happens! :(
-  for(var i in circs){
-    var c = circs[i];
-    //remove circs which go offscreen
+  for(var i in objects){
+    var c = objects[i];
+    //remove objects which go offscreen
     if(c.y + (c.rad * 2) < 0 || c.y - (c.rad * 2) > height || c.x - (c.rad * 2) > width || c.x + (c.rad * 2) < 0 || c.life < 0.001 || c.alpha < 0.1) {
-      delete circs[i];
-      circs.splice(i,1);    
+      delete objects[i];
+      objects.splice(i,1);    
     }
   }
   
@@ -189,6 +194,43 @@ function draw() {
   if(random() < 0.01) {
     //slowly shift the starting point for our perlin noise by adding this to every calculation
     randSeed += 0.01;
+  }
+}
+
+class MyLine {
+  constructor(note, vel){
+    this.note = note;
+    this.vel = vel;
+    this.stroke = vel * getParam("strokeFatness")/255;
+    //this.alpha = random(220,250);
+    this.randSeed = random(0,0.1);
+    //this.color = color(random(colors));
+
+    this.color = color(255);
+    //lowest note on 88 key keyboard is 21, highest is 108 (on my kawai anyway...)
+    this.y = map(this.note,21,108,height, 0);
+    console.log(this.note);
+    //this.dy = random(-0.1,0.5);
+    this.dy = random(-1.0,-0.05);
+    this.alpha = 255;
+    this.life = 1;
+  }
+
+  draw() {
+    stroke(this.color);
+    strokeWeight(10 * this.life);
+    //stroke(5,1500 * sq(this.life));
+    line(0,this.y, width, this.y);
+    ellipse(100,this.y,50,50);
+    //console.log('draw!');
+    //console.log(this.y);
+  }
+
+  step() {
+    this.y += this.dy;
+    this.life *= map(getParam("longevityFactor"),0,255,0.999,0.99999);
+    this.alpha *= this.life;//map(getParam("dAlpha"),0,255,254,255) * this.life;
+
   }
 }
 

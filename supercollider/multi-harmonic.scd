@@ -16,7 +16,7 @@ ServerOptions.devices;
 
 //aggregated device provides stereo for streaming [0,1] AND 4 outpus of U-Phoria [2,3,4,5]
 Server.default.options.device = "SC";
-s.options.numOutputBusChannels=6; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
+s.options.numOutputBusChannels=8; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
 
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
@@ -254,7 +254,7 @@ SynthDef.new(\tone, {
 	//sig = sig + SinOsc.ar(freq) * 0.5;
 
 
-	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.6;
+	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
 
 	//harmonic
 	//sig = sig +  SinOsc.ar(freq * 3/2 * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
@@ -268,9 +268,11 @@ SynthDef.new(\tone, {
 	//env for filter...
 	~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
+	~filterEnv= EnvGen.ar(Env.perc(0.005,1,1,-3));
+
 	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
-	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!4).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.8) * 0.4;
+	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
 
 	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
@@ -352,12 +354,12 @@ SynthDef(\FreeVerb2x2, {
 
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
-			thresh: 0.6,
+			thresh: 0.5,
 			slopeBelow: 1,
-			slopeAbove: 200,
+			slopeAbove: 0.0001,
 			clampTime:  0.01,
 			relaxTime:  0.01,
-			mul: 1.25
+			mul: 1;
 		);
 
 	); // same params as FreeVerb 1 chn version
