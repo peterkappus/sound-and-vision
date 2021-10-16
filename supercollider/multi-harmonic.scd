@@ -234,7 +234,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 22) {
-		~release = ccNum.linexp(0,127,0.01,10);
+		~release = ccNum.linexp(0,127,0.05,10);
 		//update held notes
 		~broadcastParam.value(\release,~release);
 	};
@@ -256,7 +256,12 @@ SynthDef.new(\tone, {
 	//sig = sig + SinOsc.ar(freq) * 0.5;
 
 
-	sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
+	//sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
+
+
+	sig = LFTri.ar(freq) * 0.5;
+	sig = sig +  SinOsc.ar(freq * 2/3) * 0.2;
+	//sig = sig +  LFTri.ar(freq * 5/3) * 0.1;
 
 	//harmonic
 	//sig = sig +  SinOsc.ar(freq * 3/2 * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
@@ -270,18 +275,18 @@ SynthDef.new(\tone, {
 	//env for filter...
 	//~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
-	~filterEnv= EnvGen.ar(Env.perc(0.005,1,1,-3));
+	~filterEnv= EnvGen.ar(Env.perc(0.005,0.2,1,-3));
 
 	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
-	sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
+	//sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
 
 	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
 
 
 	//square wave octave below.
-	sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
+	//sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
 
 	//sig = sig + (RLPF.ar(Pulse.ar(freq/2 * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).midiratio), filterFreq,0.5) * 0.3 * squareVol);// * LFNoise1.kr(0.1
 

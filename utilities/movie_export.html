@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- https://medium.com/swlh/video-export-from-p5-js-sketch-1b9b6287801a-->
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://unpkg.com/h264-mp4-encoder/embuild/dist/h264-mp4-encoder.web.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.1.9/lib/p5.js"></script>
+</head>
+
+<body>
+    <script>
+        /*
+            library used: https://github.com/TrevorSundberg/h264-mp4-encoder 
+            
+            a simple example exporting mp4 with p5js.
+            record video while animation is being played.
+        */
+        let cwidth = 1024
+        let cheight = 768
+        let button
+
+        let encoder
+
+        const frate = 30 // frame rate
+        const numFrames = 100 // num of frames to record
+        let recording = false
+        let recordedFrames = 0
+
+        let count = 0
+
+        // make sure encoder is ready before use
+        function preload() {
+            HME.createH264MP4Encoder().then(enc => {
+                encoder = enc
+                encoder.outputFilename = 'test'
+                encoder.width = cwidth*2
+                encoder.height = cheight*2
+                encoder.frameRate = frate
+                encoder.kbps = 50000 // video quality
+                encoder.groupOfPictures = 10 // lower if you have fast actions.
+                encoder.initialize()
+            })
+        }
+
+        function setup() {
+            createCanvas(cwidth, cheight)
+            frameRate(frate)
+            button = createButton('record')
+            button.mousePressed(() => recording = true)
+        }
+
+        function draw() {
+            background(220)
+            textSize(128)
+            textAlign(CENTER, CENTER)
+            text(count, width / 2, height / 2)
+            if(count < 10000) {
+                count++;
+            }
+
+            // keep adding new frame
+            if (recording) {
+                console.log('recording')
+                encoder.addFrameRgba(drawingContext.getImageData(0, 0, encoder.width, encoder.height).data);
+                recordedFrames++
+            }
+            // finalize encoding and export as mp4
+            if (recordedFrames === numFrames && count <= 10000) {
+                recording = false
+                recordedFrames = 0
+                console.log('recording stopped')
+
+                encoder.finalize()
+                const uint8Array = encoder.FS.readFile(encoder.outputFilename);
+                const anchor = document.createElement('a')
+                anchor.href = URL.createObjectURL(new Blob([uint8Array], { type: 'video/mp4' }))
+                anchor.download = encoder.outputFilename
+                anchor.click()
+                encoder.delete()
+
+                preload() // reinitialize encoder
+            }
+        }
+    </script>
+</body>
+
+</html>

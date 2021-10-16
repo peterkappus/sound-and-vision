@@ -26,4 +26,4 @@ docker run -i -v "$(pwd)":/data jrottenberg/ffmpeg -y -i /data/$video -i /data/$
 #ffmpeg -i video.mp4 -vf "fade=t=in:st=0:d=3" -c:a copy out.mp4
 
 #copy to iCloud account
-cp $out_video /Users/peterk/Library/Mobile\ Documents/com~apple~CloudDocs/$out_video
+cp $out_video /Users/$USER/Library/Mobile\ Documents/com~apple~CloudDocs/$out_video

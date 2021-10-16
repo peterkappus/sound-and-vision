@@ -1,0 +1,31 @@
+<html>
+<head>
+  <script src="p5.min.js"></script>
+  <script src="p5.sound.min.js"></script>
+  <script src="p5.dom.min.js"></script>
+  <script src="reverb.js"></script>
+  <style type="text/css">
+  h1 {text-align: center}
+  </style>
+</head>
+<body style="margin: 0">
+  <div id="header">
+  M: Mute &middot;
+  K: Kill oldest voice
+  0 - 9: create new voice w/ reverb from 0 - 100s
+  ENTER: Save WAV file
+  </div>
+  <table width="100%">
+    <td>
+      <h1 id="msg"></h1>
+    </td>
+    </td>
+    <td>
+      <h1 id="time">Time</h1>
+    </td>
+    <td>
+      <h1 id="voices">Voices</h1>
+    </td>
+  </table>
+</body>
+</html>
