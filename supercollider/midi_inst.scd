@@ -26,6 +26,8 @@ MIDIIn.connectAll;
 ~release_chan = 24;
 ~reverb_chan = 23;
 
+~detune = 0;
+
 //harmonics
 //~channels = [17,18,19,20,21,22];
 
@@ -60,8 +62,15 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if( chan >= ~harmonic_channels_start_index && (chan < (~harmonic_channels_start_index.asInteger + ~harmonic_channels.size))) {
-		var harmonic = LinLin.kr(ccNum,0,127,1,50);
+		var harmonic = LinLin.kr(ccNum,0,127,1,10);
 		~harmonic_channels[chan] = harmonic;
+	};
+
+	if(chan == 41) {
+		~detune = ccNum.linexp(0,127,0.1,1.2);
+
+		//update held notes
+		~broadcastParam.value(\detune,~detune);
 	};
 
 });
@@ -77,11 +86,27 @@ MIDIdef.noteOn(\noteOn,{
 		\harmonics, ~harmonic_channels.asPairs.asAssociations(SortedList).collect{|item| item.value},
 		\release, ~release,
 		\cutoff, ~cutoff,
-		\bandwidth, ~bandwidth
+		\bandwidth, ~bandwidth,
+		\detune,~detune
 		//\harmonic_channels, ~harmonic_channels
 	]);
 
 });
+
+~broadcastParam = {|key, value|
+
+	//update all sustained notes
+	for(0,~notes.size-1, {|i|
+		~notes[i].set(key,value);
+	});
+
+	//and any we're just playing...
+	for(0,~activenotes.size-1, {|i|
+		if(~activenotes[i].notNil) {
+			~activenotes[i].set(key,value);
+		}
+	});
+};
 
 // FreeVerb2 - demo synthdef
 SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
@@ -116,16 +141,20 @@ SynthDef(\thing, {
 
 
 SynthDef(\ping,	{
-	arg out, note, vol=0.5, harmonics=#[1,2,3,4,5,6], release=0.5, bandwidth = 0.75, cutoff = 15000;
+	arg out, note, vol=0.5, harmonics=#[1,2,3,4,5,6], release=0.5, bandwidth = 0.75, cutoff = 15000, detune = 0.02;
 	//var a = SinOsc.ar(LFSaw.kr(30).range(1350,350) * 0.1 * EnvGen.kr(Env.perc(releaseTime:0.2),doneAction:2));
 	var freq = note.midicps;
 
+	//detune.postln;
+
 	//round to the nearest fundamental
 	var frequencies = harmonics.collect({arg harmonic; (freq * harmonic).round(freq)}).asArray();
+
 	//or don't, and let things detune
 	//var frequencies = harmonics.collect({arg harmonic; (freq * harmonic)}).asArray();
 
 	var o = Klang.ar(`[frequencies, [0.9,0.1,0.1,0.1,0.1,0.1], pi.dup(6)], 1, 0);
+	// * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio * 0.2;
 	//var o = Klang.ar(`[frequencies, [0.4,0.2,0.1,0.08,0.05,0.025], Array.fill(harmonics.size, rand(pi))], 1, 0);
 
 	//o = SinOsc.ar(note.midicps*3);

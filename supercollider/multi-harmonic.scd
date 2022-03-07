@@ -279,9 +279,9 @@ SynthDef.new(\tone, {
 	//env for filter...
 	//~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
-	~filterEnv= EnvGen.ar(Env.perc(0.5,0.2,1,-3));
+	//~filterEnv= EnvGen.ar(Env.perc(0.5,0.2,1,-3));
 
-	sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
+	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
 	//sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
 
