@@ -4,7 +4,7 @@
 //transcribed from this: https://www.youtube.com/watch?v=ZVTbRNu2BI0
 
 //slick way to open audio settings from SC...
-"open -a 'Audio MIDI Setup'".unixCmd; // execute this to launch it
+//"open -a 'Audio MIDI Setup'".unixCmd; // execute this to launch it
 
 
 //Server.default.reboot;
@@ -252,6 +252,7 @@ SynthDef.new(\tone, {
 
 	//pan = freq.linlin(30,4000,-0.5,0.5);
 
+	sig = 0;
 	//sig = Blip.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio,nharm);
 	//sig = sig + SinOsc.ar(freq) * 0.5;
 
@@ -259,12 +260,15 @@ SynthDef.new(\tone, {
 	//sig = SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
 
 
+
 	sig = LFTri.ar(freq) * 0.5;
-	sig = sig +  SinOsc.ar(freq * 2/3) * 0.2;
+	//sig = LFSaw.ar(freq) * 0.5;
+	//sig = SinOsc.ar(freq * 2.5/3) * 0.2;
+	//sig = sig +  SinOsc.ar(freq * 7/3) * 0.2;
 	//sig = sig +  LFTri.ar(freq * 5/3) * 0.1;
 
 	//harmonic
-	//sig = sig +  SinOsc.ar(freq * 3/2 * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
+	sig = sig +  SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
 
 
 	//sig = sig + Dust.ar(10,0.25);
@@ -275,13 +279,13 @@ SynthDef.new(\tone, {
 	//env for filter...
 	//~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
-	~filterEnv= EnvGen.ar(Env.perc(0.005,0.2,1,-3));
+	~filterEnv= EnvGen.ar(Env.perc(0.5,0.2,1,-3));
 
-	//sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
+	sig = sig + RLPF.ar(Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), vol.linexp(0,127,4000,17000) * ~filterEnv,0.8),filterFreq,0.3) * 0.8;
 
 	//sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
 
-	//sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
+	sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
 
 
@@ -350,7 +354,7 @@ SynthDef(\FreeVerb2x2, {
 		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
 
 		//stereo delay
-		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
+		//signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
 
 
 		signalToCompress = FreeVerb2.ar(
