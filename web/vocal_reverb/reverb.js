@@ -6,7 +6,7 @@ var reverbs = [];
 var recorder;
 var red_color = "#c00";
 var gray_color = "#999";
-var maxVerbs = 4; // start killing 'em off after we have this many
+var maxVerbs = 8; // start killing 'em off after we have this many
 var timeSlider; // a slider for our reverbtime
 var mic = null; //initially...
 
@@ -53,7 +53,7 @@ function killAVerb() {
   env.setRange(1, 1);
 */
   r = reverbs.shift()
-  r.amp(0,10);
+  r.amp(0,15);
   debug("fading...");
   setTimeout(function(){
     debug("killing"); 
