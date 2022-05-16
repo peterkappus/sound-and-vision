@@ -12,6 +12,11 @@ If you have python installed, you can use the simple server:
 python -m SimpleHTTPServer 8000
 ```
 
+Using python 3? Try this
+```
+python3 -m http.server 9000
+```
+
 Now open a browser to http://localhost:8000 and open up a specific folder to run the example..
 
 ### Using P5 Manager

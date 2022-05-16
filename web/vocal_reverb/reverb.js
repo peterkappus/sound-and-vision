@@ -9,6 +9,9 @@ var gray_color = "#999";
 var maxVerbs = 8; // start killing 'em off after we have this many
 var timeSlider; // a slider for our reverbtime
 var mic = null; //initially...
+var bg_color = gray_color;
+
+var panning = 0;
 
 //var reverbs = [];
 
@@ -71,7 +74,6 @@ function setReverb(reverbTime) {
   createVoice(reverbTime);
 }
 
-
 //each voice has it's own reverb (should prevent crunchy noises)
 function createVoice(time){
   //alert(")
@@ -84,6 +86,11 @@ function createVoice(time){
   //mic.start();
   
   myVerb = new p5.Reverb();
+
+  //add some data to the object
+  myVerb.level = 0;
+  myVerb.time = time;
+
   myVerb.process(mic,time,1);
   reverbs.push(myVerb);
 
@@ -100,6 +107,35 @@ function startRecording() {
   recorder.record(soundFile);
 }
 
+function draw() {
+  fill(255,255,255,25);
+  var size =0;
+  //debug(mic.getLevel());
+  if(!muted){
+    reverbs.forEach(verb => {
+      
+      //max volume... not working
+      if(verb.level < mic.getLevel()) {
+        verb.level = mic.getLevel();
+      }
+      //reverbs[reverbs.length-1].level = mic.getLevel();
+      //debug(verb.level);
+      size = map(verb.level,0,0.2,0,height);
+      ellipse(width/2,height/2,size,size);
+
+      //visual decay
+      verb.level *= 0.995;//verb.time / maxTime;
+      debug(verb.level);
+
+    });
+  }
+
+  noStroke();
+  fill(color(bg_color)._getRed(),color(bg_color)._getGreen(),color(bg_color)._getBlue(),3);
+  rect(0,0,width,height);
+  //panning = map(mouseX, 0, width, -0.5, 0.5);
+}
+
 function debug(msg){
   update("#msg",msg);
   console.log(msg);
@@ -109,7 +145,6 @@ function stopRecording() {
   recorder.stop();
   save(soundFile, 'abstraktor.wav');
 }
-
 
 function keyPressed() {
   //alert();
@@ -154,11 +189,11 @@ function mute(state) {
   muted = state;
   if(!muted) {
     mic.start();
-    background(red_color);
+    bg_color = red_color;
     debug("listening...");
   }else{
     mic.stop();
-    background(gray_color);
+    bg_color = gray_color;
     debug("muted");
   }
 }
