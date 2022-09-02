@@ -62,7 +62,8 @@ SynthDef(\arpySynth,	{
 	//BLowPass.ar(SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp, cutoff,0.5);
 	~sin = SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
 	~tri = LFTri.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
-	Prand([~sin,~tri]).asStream.next;
+	~saw = RLPF.ar(Saw.ar([100,250],0.1), XLine.kr(8000,400,5), 0.05);
+	Prand([~sin,~tri,~saw]).asStream.next;
 
 }).add;
 
@@ -160,7 +161,7 @@ c = Button(w, Rect(20,55,340,30))
 	])
 	.action_({arg butt;
 		if(~arps.size > 0) {
-		    ~arps.first.release
+			~arps.removeAt(0).release;
 			~arps.size.postln;
 		};
 });
@@ -175,6 +176,10 @@ c = Button(w, Rect(20,90,340,30))
 
 //show our window
 w.front;
+//~arps.last.release;
+~arps
+
+
 
 )
 
