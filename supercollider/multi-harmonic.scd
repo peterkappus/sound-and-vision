@@ -16,7 +16,7 @@ ServerOptions.devices;
 
 //aggregated device provides stereo for streaming [0,1] AND 4 outpus of U-Phoria [2,3,4,5]
 Server.default.options.device = "SC";
-s.options.numOutputBusChannels=4; //4 channels for UMC404HD + 2 channels for BlackHole audio driver
+s.options.numOutputBusChannels=4; //4 channels for UMC404HD (add + 2 channels for BlackHole audio driver if using)
 
 //Server.default.options.device = "Multi-Output Device";
 //Server.default.options.device = "Record/Stream";
@@ -86,7 +86,13 @@ MIDIIn.connectAll;
 	}
 };
 
+
+//some utility methods
+
+//broadcast a parm change to all current notes
 ~broadcastParam = {|key, value|
+
+	("Updating: " + key).postln;
 
 	//update all sustained notes
 	for(0,~notes.size-1, {|i|
@@ -128,6 +134,7 @@ MIDIdef.noteOn(\noteOn,{
 		\attack, ~attack,
 		\release, ~release
 	]);
+
 
 	//synth = Synth.new(\randHarm, [\freq, num.midicps]);
 
@@ -173,6 +180,15 @@ MIDIdef.noteOff(\noteOff,{
 ~squareVol = 0;
 ~release = 0.001;
 
+
+//update Effects parameters
+~updateFx = {
+	arg param,ccNum,mappedLowVal,mappedHiVal;
+	~fx.set(param,ccNum.linexp(0,127,mappedLowVal,mappedHiVal));
+	("updating: " + param).postln;
+
+};
+
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
 	[ccNum,chan].postln;
@@ -191,6 +207,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 20) {
+		"updating room".postln;
 		~fx.set(\room, ccNum.linexp(0,127,0.01,30));
 	};
 
@@ -210,16 +227,19 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 17) {
-		~fx.set(\delayTime,ccNum.linexp(0,127,0.0001,4));
+		~updateFx.set(\delayTime,ccNum,0.0001,4);
+		//~fx.set(\delayTime,ccNum.linexp(0,127,0.0001,4));
 	};
 
 	if(chan == 18) {
-		~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,1280));
+		~updateFx.set(\delayFeedback,ccNum,0.25,1280);
+		//~fx.set(\delayFeedback,ccNum.linexp(0,127,0.25,1280));
 	};
 
 
 	if(chan == 23) {
-		~fx.set(\delayMix,ccNum.linexp(0,127,0.025,0.65));
+		~updateFx.set(\delayMix,ccNum,0.025,0.8);
+		//~fx.set(\delayMix,ccNum.linexp(0,127,0.025,0.65));
 	};
 
 	if(chan == 24) {
@@ -230,6 +250,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 21) {
+		"updating attack".postln;
 		~attack = ccNum.linexp(0,127,0.0001,5);
 	};
 
@@ -241,6 +262,10 @@ MIDIdef.cc(\ccFunc, {
 
 
 });
+
+
+
+
 
 
 SynthDef.new(\tone, {
@@ -261,7 +286,7 @@ SynthDef.new(\tone, {
 
 
 
-	sig = LFTri.ar(freq) * 0.5;
+	//sig = LFTri.ar(freq) * 0.5;
 	//sig = LFSaw.ar(freq) * 0.5;
 	//sig = SinOsc.ar(freq * 2.5/3) * 0.2;
 	//sig = sig +  SinOsc.ar(freq * 7/3) * 0.2;
@@ -270,14 +295,10 @@ SynthDef.new(\tone, {
 	//harmonic
 	sig = sig +  SinOsc.ar(freq * LFNoise1.kr(0.1!16).bipolar(detune.neg, detune).midiratio) * 0.5;
 
-
-	//sig = sig + Dust.ar(10,0.25);
-	//filter= Resonz.ar(saw,1000,0.1)*amp;
-
-	//~gendy =  Gendy1.ar(5.rand, 6.rand,0.95,0.95,freq/2 *0.99, freq/2 * 1.01, 0.05,0.08) * 0.5;
+	//sig = Gendy1.ar(5.rand, 6.rand,0.95,0.95,freq/2 *0.99, freq/2 * 1.01, 0.05,0.08) * 0.5;
 
 	//env for filter...
-	//~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
+	~filterEnv= 1; //EnvGen.ar(Env.perc(0.05,1,1,-3));
 
 	//~filterEnv= EnvGen.ar(Env.perc(0.5,0.2,1,-3));
 
@@ -285,12 +306,16 @@ SynthDef.new(\tone, {
 
 	//sig = sig + RLPF.ar(Saw.ar(freq * LFNoise1.kr(0.1!6).bipolar(detune.neg, detune).midiratio),(filterFreq + vol.linexp(0,127,200,5000)) * ~filterEnv,0.2) * 0.4;
 
+	//sub bass
+	sig = sig + (SinOsc.ar(freq/4) * squareVol);
+
+	//sub square
+	sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq*0.9,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
+
 	sig = sig + Resonz.ar(Saw.ar(freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio), (filterFreq + vol.linexp(0,127,100,2000)) * ~filterEnv,0.8) * 0.8;
 // +  vol.linexp(0,127,100,1200)
 
 
-	//square wave octave below.
-	//sig = sig + (RLPF.ar(Pulse.ar(freq/2), filterFreq,0.5) * 0.5 * squareVol);// * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune));
 
 	//sig = sig + (RLPF.ar(Pulse.ar(freq/2 * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).midiratio), filterFreq,0.5) * 0.3 * squareVol);// * LFNoise1.kr(0.1
 
@@ -354,7 +379,7 @@ SynthDef(\FreeVerb2x2, {
 		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
 
 		//stereo delay
-		//signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
+		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
 
 
 		signalToCompress = FreeVerb2.ar(

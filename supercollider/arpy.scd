@@ -1,5 +1,12 @@
 (
 
+
+Server.default.options.device = "UMC404HD 192k";
+
+Server.killAll;
+s.boot;
+
+
 //initialize a midi client
 MIDIClient.init;
 
@@ -7,18 +14,41 @@ MIDIClient.init;
 MIDIIn.connectAll;
 
 //array of running arps
-~arps = [];
+
+~arps = List.new;
+
 //~cutoff= 100;
 
-~arpySynth = {
+
+SynthDef(\arpySynth,	{
     arg freq, trig, reset, seq, amp = 0.1, cutoff = 12000, bottomNote= 72;
-    bottomNote = Prand([72,70,72,72]).asStream.next;
+
+	//ocassionally drop by a full tone... but why?
+	//sounds terrible, commenting out...
+	//bottomNote = Prand([72,70,72,72]).asStream.next;
     //change value for faster/slower (e.g. try 5, 15, 20)
 	trig = Impulse.kr(Prand([1.25,5,10,2.5]).asStream.next);
 	seq = Dswitch1(
         [
 			//try 70 as the low note, remove high notes to start
-            Dseq([bottomNote, bottomNote + 3, bottomNote + 7 , Drand([bottomNote + 10, bottomNote + 12,bottomNote + 14, bottomNote + 17, bottomNote + 19, bottomNote + 22, bottomNote + 26])], inf)
+            Dseq(
+				[
+					bottomNote,
+					bottomNote + 3,
+					bottomNote + 7 ,
+					Drand(
+						[
+							bottomNote + 10,
+							bottomNote + 12,
+							bottomNote + 14,
+							bottomNote + 17,
+							bottomNote + 19,
+							bottomNote + 22,
+							bottomNote + 26
+
+						]
+					)
+				], inf)
             //Dseq([72, 75, 79, Drand([82,84,86])], inf)
 
         ],
@@ -30,20 +60,12 @@ MIDIIn.connectAll;
 	//change numerator in fraction below
 	//[0,0.7] provides some stereo chorusing
 	//BLowPass.ar(SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp, cutoff,0.5);
-	s = SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
-	x = LFTri.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
-	Prand([s,x]).asStream.next;
+	~sin = SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
+	~tri = LFTri.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
+	Prand([~sin,~tri]).asStream.next;
 
-};
+}).add;
 
-
-~deepThing = {
-	//TODO....SinO
-};
-
-//Drand([1,3,5,3],inf);
-
-//~arp.set(\cutoff,12000);
 
 MIDIdef.noteOn(\noteOn, {
 	arg vel, num, chan;
@@ -55,6 +77,9 @@ MIDIdef.noteOn(\noteOn, {
 
 
 //handle continuous control messages
+// use a virtual midi surface to create and remove arps.
+
+/*
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
 
@@ -113,4 +138,43 @@ MIDIdef.cc(\ccFunc, {
 	//print the num & chan regardless
 	[ccNum, chan].postln;
 });
+*/
+
+//create a UI here to play with
+w = Window.new("Arp maker");
+
+b = Button(w, Rect(20, 20, 340, 30))
+        .states_([
+            ["Create arp", Color.black, Color.yellow]
+		])
+        .action_({ arg butt;
+
+		~arps.add(~arpySynth.play);
+
+		~arps.size.postln;
+        });
+
+c = Button(w, Rect(20,55,340,30))
+	.states_([
+		["Remove an arp",Color.white, Color.blue]
+	])
+	.action_({arg butt;
+		if(~arps.size > 0) {
+		    ~arps.first.release
+			~arps.size.postln;
+		};
+});
+
+c = Button(w, Rect(20,90,340,30))
+	.states_([
+		["Reboot!",Color.black, Color.red]
+	])
+	.action_({arg butt;
+		s.reboot;
+});
+
+//show our window
+w.front;
+
 )
+
