@@ -62,8 +62,8 @@ SynthDef(\arpySynth,	{
 	//BLowPass.ar(SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp, cutoff,0.5);
 	~sin = SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
 	~tri = LFTri.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
-	~saw = RLPF.ar(Saw.ar([100,250],0.1), XLine.kr(8000,400,5), 0.05);
-	Prand([~sin,~tri,~saw]).asStream.next;
+	//~saw = RLPF.ar(Saw.ar([100,250],0.1), XLine.kr(8000,400,5), 0.05);
+	Prand([~sin,~tri]).asStream.next;
 
 }).add;
 
