@@ -26,8 +26,10 @@ SynthDef(\arpySynth,	{
 	//ocassionally drop by a full tone... but why?
 	//sounds terrible, commenting out...
 	//bottomNote = Prand([72,70,72,72]).asStream.next;
-    //change value for faster/slower (e.g. try 5, 15, 20)
-	trig = Impulse.kr(Prand([1.25,5,10,2.5]).asStream.next);
+
+	//Trigger rate, change value for faster/slower (e.g. try 5, 15, 20)
+	trig = Impulse.kr(Prand([0.75,1.25,5,10,2.5]).asStream.next);
+
 	seq = Dswitch1(
         [
 			//try 70 as the low note, remove high notes to start
@@ -141,6 +143,26 @@ MIDIdef.cc(\ccFunc, {
 });
 */
 
+
+~addArp ={
+	~arps.add(~arpySynth.play);
+	~arps.size.postln;
+};
+
+~removeLastArp = {
+	~arps.pop.release;
+	~arps.size.postln;
+};
+
+~removeFirstArp = {
+	~arps.removeAt(0).release;
+};
+
+~hello ={
+	"hello".postln;
+};
+
+
 //create a UI here to play with
 w = Window.new("Arp maker");
 
@@ -149,20 +171,16 @@ b = Button(w, Rect(20, 20, 340, 30))
             ["Create arp", Color.black, Color.yellow]
 		])
         .action_({ arg butt;
-
-		~arps.add(~arpySynth.play);
-
-		~arps.size.postln;
+			~addArp.value;
         });
 
 c = Button(w, Rect(20,55,340,30))
 	.states_([
-		["Remove an arp",Color.white, Color.blue]
+		["Remove last arp",Color.white, Color.blue]
 	])
 	.action_({arg butt;
 		if(~arps.size > 0) {
-			~arps.removeAt(0).release;
-			~arps.size.postln;
+			~removeLastArp.value;
 		};
 });
 
@@ -174,11 +192,48 @@ c = Button(w, Rect(20,90,340,30))
 		s.reboot;
 });
 
+t = TextView(w,Rect(20,125,340,200));
+t.string = "Use your keyboard to create and remove arps.\na => Add an arp\nf => Remove oldest arp\nj => remove newest arp\nESC => reboot";
+t.setFont(Font("Helvetica Neue", 12));
+
+//w = Window.new("Keyboard control!");
+w.view.keyUpAction= {
+	arg doc, char, modifiers, unicode, keycode, key;
+	 //for degbugging
+	[doc, char, modifiers, unicode, keycode, key].postln;
+
+	// using "char == 'a'" didn't work :(
+	// trying with unicode values
+
+	// a
+	//if(char.toLower == "a") {
+	if(unicode == 97){
+		"ok".postln;
+		~addArp.value;
+	};
+
+	// f
+	if(unicode == 102){
+	//if(char == "f") {
+		~removeFirstArp.value;
+	};
+
+	//j
+	if(unicode == 106){
+	//if(char == "j") {
+		~removeLastArp.value;
+	};
+
+	//esc
+	if(unicode == 27){
+	//if(key == 74) {
+		s.reboot;
+	};
+
+};
+
 //show our window
 w.front;
-//~arps.last.release;
-~arps
-
 
 
 )
