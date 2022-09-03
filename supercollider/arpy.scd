@@ -208,7 +208,6 @@ w.view.keyUpAction= {
 	// a
 	//if(char.toLower == "a") {
 	if(unicode == 97){
-		"ok".postln;
 		~addArp.value;
 	};
 
@@ -235,6 +234,28 @@ w.view.keyUpAction= {
 //show our window
 w.front;
 
+
+SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
+    var signal;
+
+    signal = In.ar(out, 2);
+
+    ReplaceOut.ar(out,
+		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
+      FreeVerb2.ar( // FreeVerb2 - true stereo UGen
+            signal[0], // Left channel
+            signal[1], // Right Channel
+            mix, room, damp, amp
+        );
+    ); // same params as FreeVerb 1 chn version
+
+}).add;
+
+fork{
+	5.wait;
+	//instantiate our freeverb (replacing our usual output)
+	z = Synth(\FreeVerb2x2, [\outbus, 0, \room, 1], addAction:\addToTail);
+}
 
 )
 
