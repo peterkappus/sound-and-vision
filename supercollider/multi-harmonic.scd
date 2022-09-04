@@ -212,7 +212,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 19) {
-		~filterFreq = ccNum.linexp(0,127,200,12000);
+		~filterFreq = ccNum.linexp(0,127,100,12000);
 
 		//update held notes
 		~broadcastParam.value(\filterFreq,~filterFreq);
@@ -446,8 +446,17 @@ fork {
 */
 
 
+fork {
+	5.wait;
 
+	//want to record?
+	~path = "/Users/peterk/Library/Mobile\ Documents/com~apple~CloudDocs/art\ \&\ music/pk\ music/supercollider\ captures/raw/" ++ Date.getDate.rawSeconds.asString.stripWhiteSpace ++ ".aiff";
+s.record(~path);
 
+	//s.stopRecording;
+	//Where are the recordings?
+	//thisProcess.platform.recordingsDir;
+};
 
 )
 
@@ -455,4 +464,4 @@ fork {
 //z.set(\damp, 0.3);
 
 // silence
-[a, ~fx].do(_.free)
+[a, ~fx].do(_.free)]

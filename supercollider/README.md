@@ -21,3 +21,17 @@ Server.default.options.device = "SC";
 s.options.numOutputBusChannels=6; //4 channels for UMC404HD + 2 channels for BlackHole audio  
 ```
 
+## Handy Sox tricks
+After making a recording, strip the silence from beginnign and end like so:
+`sox FILENAME OUT.mp3 silence 1 0.1 1% 1 0.1 1%`
+
+To split a file into multiple files based on silence:
+
+sox 1662325763.9707.aiff snippet.flac silence 1 3 0.5% 1 2 0.005% : newfile : restart
+
+silence params: above periods, above min duration, above threshold, below periods, below duration, below threshold.
+In the above case, 1 period of 3 seconds of audio above 0.005% volume and 1 period of 3 seconds below 0.005% of volume.
+
+Thanks https://madskjeldgaard.dk/posts/sox-tutorial-split-by-silence/
+
+
