@@ -3,6 +3,8 @@
 
 Server.default.options.device = "UMC404HD 192k";
 
+//Server.default.options.device = "MacBook Pro Speakers";
+
 Server.killAll;
 s.boot;
 
