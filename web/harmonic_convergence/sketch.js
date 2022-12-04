@@ -64,7 +64,8 @@ class Bar{
     this.osc.freq(midiToFreq(this.note));
     //detune slightly...
     this.osc.freq(midiToFreq(this.note) * random(0.995,1.005));
-    this.osc.pan(-0.2 + random() * 1); //pan -0.2 to 0.8
+    this.osc.pan(-0.8 + random(1.6)); //pan -0.8 to 0.8
+    //this.osc.pan(-1);
     this.osc.start();
     this.color = color(random(colors));
     this.lfoRate = random(0.02,0.05); //slow & low, that is the tempo.

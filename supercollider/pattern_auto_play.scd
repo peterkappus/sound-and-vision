@@ -6,7 +6,7 @@ Env.perc(0.001, 1, 1, -8).test.plot
 s.reboot();
 ServerOptions.devices;
 //Server.default.options.device = "Peter Kappus’s AirPods P";
-Server.default.options.device = "SC";
+//Server.default.options.device = "SC";
 //ServerOptions.numChannels = 0;
 
 

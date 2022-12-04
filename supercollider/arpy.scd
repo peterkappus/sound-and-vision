@@ -1,7 +1,7 @@
 (
 
 
-Server.default.options.device = "UMC404HD 192k";
+//Server.default.options.device = "UMC404HD 192k";
 
 //Server.default.options.device = "MacBook Pro Speakers";
 
@@ -21,16 +21,15 @@ MIDIIn.connectAll;
 
 //~cutoff= 100;
 
-
 SynthDef(\arpySynth,	{
-    arg freq, trig, reset, seq, amp = 0.1, cutoff = 12000, bottomNote= 72;
+    arg freq, trig, reset, seq, trig_kr = 1, amp = 0.1, cutoff = 12000, bottomNote= 72, out = 0;
 
 	//ocassionally drop by a full tone... but why?
 	//sounds terrible, commenting out...
 	//bottomNote = Prand([72,70,72,72]).asStream.next;
 
 	//Trigger rate, change value for faster/slower (e.g. try 5, 15, 20)
-	trig = Impulse.kr(Prand([0.75,1.25,5,10,2.5]).asStream.next);
+	trig = Impulse.kr(trig_kr);
 
 	seq = Dswitch1(
         [
@@ -64,14 +63,151 @@ SynthDef(\arpySynth,	{
 	//change numerator in fraction below
 	//[0,0.7] provides some stereo chorusing
 	//BLowPass.ar(SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp, cutoff,0.5);
+
+
+	//SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
 	~sin = SinOsc.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
 	~tri = LFTri.ar(freq * Prand([2,3,4,8]).asStream.next/5 + [0,0.7]) * amp;
 	//~saw = RLPF.ar(Saw.ar([100,250],0.1), XLine.kr(8000,400,5), 0.05);
-	Prand([~sin,~tri]).asStream.next;
+	~sig = Prand([~sin,~tri]).asStream.next;
+
+	Out.ar(out, ~sig);
 
 }).add;
 
 
+//SynthDef.new("noisy",{ |out| Out.ar(out,PinkNoise.ar(0.3))}).add;
+
+~addArp ={
+	//~arps.add(Synth(\noisy));
+	~arps.add(Synth(\arpySynth, [trig_kr: [0.75,1.25,5,10,2.5].choose]);
+	~arps.size.postln;
+};
+
+~removeLastArp = {
+	//~arps.pop.release;
+	~arps.pop.free;
+	~arps.size.postln;
+};
+
+~removeFirstArp = {
+	if(~arps.size > 0, {
+		~arps.removeAt(0).free;
+	});
+	~arps.size.postln;
+};
+
+
+
+//create a UI here to play with
+w = Window.new("Arp maker");
+
+b = Button(w, Rect(20, 20, 340, 30))
+        .states_([
+            ["Create arp", Color.black, Color.yellow]
+		])
+        .action_({ arg butt;
+			~addArp.value;
+        });
+
+c = Button(w, Rect(20,55,340,30))
+	.states_([
+		["Remove last arp",Color.white, Color.blue]
+	])
+	.action_({arg butt;
+		if(~arps.size > 0) {
+			~removeLastArp.value;
+		};
+});
+
+c = Button(w, Rect(20,90,340,30))
+	.states_([
+		["Reboot!",Color.black, Color.red]
+	])
+	.action_({arg butt;
+		s.reboot;
+});
+
+t = TextView(w,Rect(20,125,340,200));
+t.string = "Use your keyboard to create and remove arps.\na => Add an arp\nf => Remove oldest arp\nj => remove newest arp\nESC => reboot";
+t.setFont(Font("Helvetica Neue", 12));
+
+//w = Window.new("Keyboard control!");
+w.view.keyUpAction= {
+	arg doc, char, modifiers, unicode, keycode, key;
+	 //for degbugging
+	//[doc, char, modifiers, unicode, keycode, key].postln;
+
+	// using "char == 'a'" didn't work :(
+	// trying with unicode values
+
+	// a
+	//if(char.toLower == "a") {
+	if(unicode == 97){
+		~addArp.value;
+	};
+
+	// f
+	if(unicode == 102){
+	//if(char == "f") {a
+		~removeFirstArp.value;
+	};
+
+	//j
+	if(unicode == 106){
+	//if(char == "j") {
+		~removeLastArp.value;
+	};
+
+	//esc
+	if(unicode == 27){
+	//if(key == 74) {
+		s.reboot;
+	};
+
+};
+
+//show our window
+w.front;
+
+
+
+
+SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
+    var signal;
+
+    signal = In.ar(out, 2);
+
+    ReplaceOut.ar(out,
+		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
+      FreeVerb2.ar( // FreeVerb2 - true stereo UGen
+            signal[0], // Left channel
+            signal[1], // Right Channel
+            mix, room, damp, amp
+        );
+    ); // same params as FreeVerb 1 chn version
+
+}).add;
+
+fork{
+	5.wait;
+	//instantiate our freeverb (replacing our usual output)
+	z = Synth(\FreeVerb2x2, [\outbus, 0, \room, 1], addAction:\addToTail);
+}
+
+
+)
+
+
+
+
+
+
+
+
+//midi stuff
+
+/*
 MIDIdef.noteOn(\noteOn, {
 	arg vel, num, chan;
 
@@ -79,6 +215,7 @@ MIDIdef.noteOn(\noteOn, {
 	[vel, num, chan].postln
 
 });
+*/
 
 
 //handle continuous control messages
@@ -145,119 +282,4 @@ MIDIdef.cc(\ccFunc, {
 });
 */
 
-
-~addArp ={
-	~arps.add(~arpySynth.play);
-	~arps.size.postln;
-};
-
-~removeLastArp = {
-	~arps.pop.release;
-	~arps.size.postln;
-};
-
-~removeFirstArp = {
-	~arps.removeAt(0).release;
-};
-
-~hello ={
-	"hello".postln;
-};
-
-
-//create a UI here to play with
-w = Window.new("Arp maker");
-
-b = Button(w, Rect(20, 20, 340, 30))
-        .states_([
-            ["Create arp", Color.black, Color.yellow]
-		])
-        .action_({ arg butt;
-			~addArp.value;
-        });
-
-c = Button(w, Rect(20,55,340,30))
-	.states_([
-		["Remove last arp",Color.white, Color.blue]
-	])
-	.action_({arg butt;
-		if(~arps.size > 0) {
-			~removeLastArp.value;
-		};
-});
-
-c = Button(w, Rect(20,90,340,30))
-	.states_([
-		["Reboot!",Color.black, Color.red]
-	])
-	.action_({arg butt;
-		s.reboot;
-});
-
-t = TextView(w,Rect(20,125,340,200));
-t.string = "Use your keyboard to create and remove arps.\na => Add an arp\nf => Remove oldest arp\nj => remove newest arp\nESC => reboot";
-t.setFont(Font("Helvetica Neue", 12));
-
-//w = Window.new("Keyboard control!");
-w.view.keyUpAction= {
-	arg doc, char, modifiers, unicode, keycode, key;
-	 //for degbugging
-	[doc, char, modifiers, unicode, keycode, key].postln;
-
-	// using "char == 'a'" didn't work :(
-	// trying with unicode values
-
-	// a
-	//if(char.toLower == "a") {
-	if(unicode == 97){
-		~addArp.value;
-	};
-
-	// f
-	if(unicode == 102){
-	//if(char == "f") {
-		~removeFirstArp.value;
-	};
-
-	//j
-	if(unicode == 106){
-	//if(char == "j") {
-		~removeLastArp.value;
-	};
-
-	//esc
-	if(unicode == 27){
-	//if(key == 74) {
-		s.reboot;
-	};
-
-};
-
-//show our window
-w.front;
-
-
-SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
-    var signal;
-
-    signal = In.ar(out, 2);
-
-    ReplaceOut.ar(out,
-		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
-      FreeVerb2.ar( // FreeVerb2 - true stereo UGen
-            signal[0], // Left channel
-            signal[1], // Right Channel
-            mix, room, damp, amp
-        );
-    ); // same params as FreeVerb 1 chn version
-
-}).add;
-
-fork{
-	5.wait;
-	//instantiate our freeverb (replacing our usual output)
-	z = Synth(\FreeVerb2x2, [\outbus, 0, \room, 1], addAction:\addToTail);
-}
-
-)
 

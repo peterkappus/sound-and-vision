@@ -87,6 +87,7 @@ function draw() {
   var octave = Math.round(random(0,4));
   while(note == previousNote) {
     note = random(notes);
+    osc.pan(-0.5 + random(1));
     osc.freq(midiToFreq(bottom_pitch + octave * 12 + random(notes)));
   }
 

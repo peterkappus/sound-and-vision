@@ -10,7 +10,7 @@
 //Server.default.reboot;
 ServerOptions.devices;
 //Server.default.options.device = "HD 4.50BTNC";
-//Server.default.options.device = "UMC404HD 192k";
+Server.default.options.device = "UMC404HD 192k";
 //Server.default.options.device = "Jabra EVOLVE 20 MS";
 //Server.default.options.device = "Built-in Output";
 
