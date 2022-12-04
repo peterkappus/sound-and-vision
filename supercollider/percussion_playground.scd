@@ -2,14 +2,26 @@
 
 //Server.default.options.device = "MacBook Pro Speakers";
 Server.default.options.outDevice_("Built-in Output");
+Server.default.options.outDevice_("UMC404HD 192k");
+
+
 Server.killAll;
 s.boot;
+
+{Splay.ar( SinOsc.ar({rand(438,440)} ! 8), level: 0.2)}.play;
+
+{Splay.ar( SinOsc.ar({ LFNoise2.kr(0.2).exprange(220,880)} ! 8), level: 0.2)}.play;
+
+{Splay.ar( SinOsc.ar({ 440 * [1,2,3,5,7,8,9].choose / [1,2,3,5,7,9,12,14].choose} ! 8), level: 0.2)}.play;
+
+{Splay.ar( SinOsc.ar({ 440 * [1,3,6,8].choose / [1,2,3,4,6,12].choose} ! 8), level: 0.2)}.play;
+
 
 (
 
 
-SynthDef(\sawz, { |ffreq = 800, freq = 440 |
-	var env = EnvGen.kr(Env.new(times: [3,4]), doneAction: Done.freeSelf);
+SynthDef(\sawz, { |ffreq = 800, freq = 440, duration = 5 |
+	var env = EnvGen.kr(Env.new(times: [duration * 0.4,duration * 0.6]), doneAction: Done.freeSelf);
 	var osc =  SinOsc.ar([freq,freq * (1 + Rand.new(0,0.002))]) * 0.5;
 	var saw;
 
@@ -19,7 +31,7 @@ SynthDef(\sawz, { |ffreq = 800, freq = 440 |
 	saw = Saw.ar([freq,freq * (2 + Rand.new(0,0.002))]) * 0.5;
 
 	//osc = BPF.ar(osc, ffreq * 1.25, 1);
-	saw = MoogFF.ar(saw,ffreq * 8 * EnvGen.kr(Env.new(times:[3,4])));
+	saw = MoogFF.ar(saw,ffreq * 2 * EnvGen.kr(Env.new(times:[duration * 0.4, duration * 0.6])));
 
 	osc = saw + osc;
 
@@ -27,16 +39,49 @@ SynthDef(\sawz, { |ffreq = 800, freq = 440 |
 }).add;
 
 
-fork {
-	8.do {
-		var f = (66 + 12.rand).midicps;
-		var ffreq = 850 + 1500.rand;
-		var saw = Synth(\sawz, [freq: f, ffreq: ffreq]);
-		var saw2 = Synth(\sawz, [freq: f * 2/3, ffreq: ffreq]);
-		var saw3 = Synth(\sawz, [freq: f * 5/[3,4,6,12].choose, ffreq: ffreq]);
-		5.wait;
+
+/*
+SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
+    var signal;
+
+    signal = In.ar(out, 2);
+
+    ReplaceOut.ar(out,
+		//GVerb.ar(signal, 10, 4, 0.5, 0.5, 10, 0.2);
+      FreeVerb2.ar( // FreeVerb2 - true stereo UGen
+            signal[0], // Left channel
+            signal[1], // Right Channel
+            mix, room, damp, amp
+        );
+    ); // same params as FreeVerb 1 chn version
+
+}).add;
+*/
+
+fork{
+	/*3.wait;
+	//instantiate our freeverb (replacing our usual output)
+	z = Synth(\FreeVerb2x2, [\outbus, 0, \room, 2], addAction:\addToTail);
+	*/
+
+	16.do {
+		var f = (66 + [2,4,6,7,8,10].choose).midicps;
+
+		//var duration = [2,3,4,5,7,8].choose;
+
+		//sounds better if they're all uniform
+		var duration = 7;
+
+		var filterFreq = 850 + 1500.rand;
+		var saw = Synth(\sawz, [duration: duration, freq: f, ffreq: filterFreq]);
+		var saw2 = Synth(\sawz, [duration: duration, freq: f * 2/3, ffreq: filterFreq]);
+		var saw3 = Synth(\sawz, [duration: duration, freq: f * [1,2,3,5,7,9].choose/[3,4,6,12].choose, ffreq: filterFreq]);
+		//5.wait;
+		(duration * 0.71).wait;
 	}
 }
+
+
 
 )
 
@@ -66,9 +111,9 @@ SynthDef(\snare, { | filterFreq = 1400 |
 
 
 fork {
-	16.do {
-		7.do {
-			Synth(\kick, [freq: 250 + 30.rand]);
+	2.do {
+		3.do {
+			Synth(\kick, [freq: 150 + 30.rand]);
 			0.25.wait;
 
 			Synth(\snare, [filterFreq: 12500 + 5500.rand]);
@@ -76,13 +121,13 @@ fork {
 		};
 
 		1.do {
-			Synth(\kick, [freq: 250 + 30.rand]);
+			Synth(\kick, [freq: 150 + 30.rand]);
 			0.25.wait;
 
 			Synth(\snare, [filterFreq: 12500 + 5500.rand]);
 			0.125.wait;
 
-			Synth(\snare, [filterFreq: 12500 + 5500.rand]);
+			Synth(\snare, [filterFreq: 10500 + 2500.rand]);
 			0.125.wait;
 		};
 	}
