@@ -10,37 +10,104 @@ s.boot;
 
 {Splay.ar( SinOsc.ar({rand(438,440)} ! 8), level: 0.2)}.play;
 
-{Splay.ar( SinOsc.ar({ LFNoise2.kr(0.2).exprange(220,880)} ! 8), level: 0.2)}.play;
+{Splay.ar( SinOsc.ar({ LFNoise2.kr(10).exprange(220,15880)} ! 8), level: 0.2)}.play;
 
 {Splay.ar( SinOsc.ar({ 440 * [1,2,3,5,7,8,9].choose / [1,2,3,5,7,9,12,14].choose} ! 8), level: 0.2)}.play;
 
 {Splay.ar( SinOsc.ar({ 440 * [1,3,6,8].choose / [1,2,3,4,6,12].choose} ! 8), level: 0.2)}.play;
 
 
+{SinOsc.ar(440 + (850 * SinOsc.kr(5)))}.scope;
+
+
+
+(
+
+
+
+
+SynthDef(\ding, { |f = 440|
+	(SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.4);
+}).add;
+
+
+fork {
+	var tempo = 60;
+	var ffreq = 12000 + (300 * SinOsc.kr(0.2));
+	ffreq.postln;
+
+	32.do {
+		{
+			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+			//Harmonics
+			//var f= Pxrand(notes, inf).asStream.next.midicps * 1;
+			var f = notes.choose.midicps;
+
+			var sig = SinOsc.ar([f, Rand(f,f*1.01)]);
+
+			//add weird harmonics
+			//sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 3/5) * 0.2);
+
+			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.4);
+
+			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]  * 1/4) * 0.2);
+
+			//sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]  * 7/3) * 0.1) ;
+
+			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16) * 0.2 );
+
+			//sig = RLPF.ar(sig, 2800, 0.8);
+			sig = LPF.ar(sig, 12000 + (3500 * SinOsc.kr(3)),1);
+			//sig = LPF.ar(sig, -100, 0.8);
+
+
+			Out.ar(0, sig * 0.2 * EnvGen.kr(Env.perc(releaseTime:4),doneAction: Done.freeSelf));
+
+		}.play;
+
+		//[1/8,2/8,3/8,1/2].choose.wait;
+
+		(60/tempo * [1/8,1/4,1/8,1/8,1/2].choose).wait;
+		//0.125.wait;
+	}
+}
+)
+
+
 (
 
 
 SynthDef(\sawz, { |ffreq = 800, freq = 440, duration = 5 |
+
+	//swelling envelope for sine wave
 	var env = EnvGen.kr(Env.new(times: [duration * 0.4,duration * 0.6]), doneAction: Done.freeSelf);
+
+	//stereo sine waves slightly out of tune
 	var osc =  SinOsc.ar([freq,freq * (1 + Rand.new(0,0.002))]) * 0.5;
 	var saw;
 
 	//osc = BPF.ar(osc, 220,0.8);
+	//low pass filter to smooth it out. Is this necessary with sine waves?
 	osc = LPF.ar(osc, ffreq);
 
+	//add a stereo saw, slightly detuned
 	saw = Saw.ar([freq,freq * (2 + Rand.new(0,0.002))]) * 0.5;
 
 	//osc = BPF.ar(osc, ffreq * 1.25, 1);
+	//filter w/ MoogFF filter which swells using envleope matched to duration
 	saw = MoogFF.ar(saw,ffreq * 2 * EnvGen.kr(Env.new(times:[duration * 0.4, duration * 0.6])));
 
+	//combine the two
 	osc = saw + osc;
 
+	//output
 	Out.ar(0, env * osc * 0.4);
 }).add;
 
 
 
 /*
+//add reverb... but not necessary with such slow waves. just makes it muddy.
 SynthDef(\FreeVerb2x2, { |out, mix = 0.25, room = 0.15, damp = 0.2, amp = 1.0|
     var signal;
 
@@ -73,10 +140,17 @@ fork{
 		var duration = 7;
 
 		var filterFreq = 850 + 1500.rand;
+
+		//generate 3 waves
 		var saw = Synth(\sawz, [duration: duration, freq: f, ffreq: filterFreq]);
+
+		//fifth?
 		var saw2 = Synth(\sawz, [duration: duration, freq: f * 2/3, ffreq: filterFreq]);
+
+		//create eerie harmonics using fixed ratios
 		var saw3 = Synth(\sawz, [duration: duration, freq: f * [1,2,3,5,7,9].choose/[3,4,6,12].choose, ffreq: filterFreq]);
-		//5.wait;
+
+		//wait based on duration (currently all the same duration but could vary)
 		(duration * 0.71).wait;
 	}
 }
