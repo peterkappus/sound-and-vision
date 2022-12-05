@@ -1,9 +1,10 @@
 
 
 //Server.default.options.device = "MacBook Pro Speakers";
-Server.default.options.outDevice_("Built-in Output");
-Server.default.options.outDevice_("UMC404HD 192k");
+//Server.default.options.outDevice_("Built-in Output");
+//Server.default.options.outDevice_("UMC404HD 192k");
 
+Server.default.options.outDevice_("Default");
 
 Server.killAll;
 s.boot;
@@ -17,58 +18,110 @@ s.boot;
 {Splay.ar( SinOsc.ar({ 440 * [1,3,6,8].choose / [1,2,3,4,6,12].choose} ! 8), level: 0.2)}.play;
 
 
-{SinOsc.ar(440 + (850 * SinOsc.kr(5)))}.scope;
+//{SinOsc.ar(440 + (850 * SinOsc.kr(5)))}.scope;
+
+
+(
+
+SynthDef(\ding, { |f = 440, amp = 1 |
+	var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]) * amp);
+	//Out.ar(0, sig);
+}).add;
+
+
+
+~detuneSine = {|f=440|
+	SinOsc.ar({Rand(f * 0.99, f * 1.01) }! 2) * 0.5;
+	//SinOsc.ar({Rand(f * 0.3, f * 1.5)} ! 2) * 0.5;
+};
+
+
+
+
+fork {
+	20.do {
+		var f = Pxrand(#[25,27,29,31,32,34,35,37,39,40,41,43,45]).asStream.next.midicps;
+
+		{
+			//var sig = Synth(\ding, [f:880]); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
+			var sig = ~detuneSine.value(f * 2) * EnvGen.kr(Env.perc(releaseTime:3), doneAction: Done.freeSelf);
+			//sig += Synth(\ding ); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
+			//var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.3);
+			Out.ar(0, sig);
+		}.play;
+		1.wait;
+	}
+}
+)
 
 
 
 (
 
+~detuneSine = {|f=440|
+	var wobble = 0.002;
+	SinOsc.ar({Rand(f * (1 - wobble), f * (1 + wobble)) }! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
+	//	Pan2.ar(sig,-1);
+};
 
+/*
 
+SynthDef(\ding, {
+	//random velocity
+	//output
+	//Out.ar(0, sig);
 
-SynthDef(\ding, { |f = 440|
-	(SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.4);
 }).add;
-
+*/
 
 fork {
-	var tempo = 60;
-	var ffreq = 12000 + (300 * SinOsc.kr(0.2));
-	ffreq.postln;
+	var tempo = 120;
 
-	32.do {
+	64.do {
+		//Synth(\ding);
 		{
-			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
-			//Harmonics
-			//var f= Pxrand(notes, inf).asStream.next.midicps * 1;
-			var f = notes.choose.midicps;
+			var vel = Rand(0.3,1);
 
-			var sig = SinOsc.ar([f, Rand(f,f*1.01)]);
+			var baseNote = 0;
+
+			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+
+			//var notes = #[0,2,4,5,7,9,11,12];
+
+			var octave = #[-2,-1,0,1,2].choose;
+
+			//random tone * random octave
+			var f = ( (octave * 12) + baseNote + Prand(notes, inf).asStream.next).midicps;
+
+
+			//var f = notes.choose.midicps / 2;
+			//var f = [73,75].choose.midicps / 2;
+
 
 			//add weird harmonics
-			//sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 3/5) * 0.2);
 
-			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.4);
+			var sig = ~detuneSine.value(f);
 
-			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]  * 1/4) * 0.2);
+			sig = sig + (~detuneSine.value(f * 1/4) * 0.2);
+			sig = sig + (~detuneSine.value(f * 8) * 0.1);
+			sig = sig + (~detuneSine.value(f * 7/3) * 0.05);
+			sig = sig + (~detuneSine.value(f * 16) * 0.2);
 
-			//sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]  * 7/3) * 0.1) ;
+			sig = sig * vel;
 
-			sig = sig + (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16) * 0.2 );
-
-			//sig = RLPF.ar(sig, 2800, 0.8);
-			sig = LPF.ar(sig, 12000 + (3500 * SinOsc.kr(3)),1);
+			sig = LPF.ar(sig, (9500 * vel) + (2500 * SinOsc.kr(Rand(1.5,8))),1);
 			//sig = LPF.ar(sig, -100, 0.8);
+			//sig = Pan2.ar(sig,Rand(-1,1));
+			//sig = Pan2.ar(sig, -1);
 
+			//[1/8,2/8,3/8,1/2].choose.wait;
 
-			Out.ar(0, sig * 0.2 * EnvGen.kr(Env.perc(releaseTime:4),doneAction: Done.freeSelf));
+			Out.ar(0, sig);
 
+			//(60/tempo * [1/8,1/4,1/8,1/8,1/2].choose).wait;
+			(60/tempo * [1/4,1/2].choose).wait;
+			//0.125.wait;
 		}.play;
-
-		//[1/8,2/8,3/8,1/2].choose.wait;
-
-		(60/tempo * [1/8,1/4,1/8,1/8,1/2].choose).wait;
-		//0.125.wait;
 	}
 }
 )
