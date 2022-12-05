@@ -23,6 +23,58 @@ s.boot;
 
 (
 
+~detuneSine = {|f=440|
+	var wobble = 0.004;
+	SinOsc.ar({Rand(f * (1 - wobble), f * (1 + wobble)) } ! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
+};
+
+fork {
+	var tempo = 120;
+
+	128.do {
+		//Synth(\ding);
+		{
+			var vel = Rand(0.4,1);
+
+			var baseNote = 0;
+
+			//various notes
+			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+
+			var octave = #[-2,-1,0,1,2].choose;
+
+			//random tone * random octave
+			var f = ( (octave * 12) + baseNote + Prand(notes, inf).asStream.next).midicps;
+
+			//signal
+			var sig = ~detuneSine.value(f);
+
+			//add weird harmonics
+
+			sig = sig + (~detuneSine.value(f * 1/4) * 0.2);
+			sig = sig + (~detuneSine.value(f * 8) * 0.1);
+			sig = sig + (~detuneSine.value(f * 7/5) * 0.01);
+			sig = sig + (~detuneSine.value(f * 16) * 0.1);
+
+
+			sig = sig * vel;
+
+			//low pass filter based on velocity + a wobbly higher filter from 1.5 to 8 hz
+			// DANGER! If LPF freq gets close to zero, there will be LOUD artefacts.
+			sig = LPF.ar(sig, (12500 * vel) + (3500 * SinOsc.kr(Rand(1.5,8))),1);
+
+			Out.ar(0, sig);
+
+			(60/tempo * [1/4,1/2].choose).wait;
+		}.play;
+	}
+}
+)
+
+
+
+(
+
 SynthDef(\ding, { |f = 440, amp = 1 |
 	var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]) * amp);
 	//Out.ar(0, sig);
@@ -31,10 +83,9 @@ SynthDef(\ding, { |f = 440, amp = 1 |
 
 
 ~detuneSine = {|f=440|
-	SinOsc.ar({Rand(f * 0.99, f * 1.01) }! 2) * 0.5;
-	//SinOsc.ar({Rand(f * 0.3, f * 1.5)} ! 2) * 0.5;
+	var wobble = 0.002;
+	SinOsc.ar({Rand(f * (1 - wobble), f * (1 + wobble)) } ! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
 };
-
 
 
 
@@ -44,84 +95,16 @@ fork {
 
 		{
 			//var sig = Synth(\ding, [f:880]); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
-			var sig = ~detuneSine.value(f * 2) * EnvGen.kr(Env.perc(releaseTime:3), doneAction: Done.freeSelf);
+			var sig = ~detuneSine.value(f * 2);
+			sig = sig + (~detuneSine.value(f * 3/4));
+			sig = sig + (~detuneSine.value(f * 4));
+			sig = sig + (~detuneSine.value(f * 7/5));
+
 			//sig += Synth(\ding ); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
 			//var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.3);
 			Out.ar(0, sig);
 		}.play;
 		1.wait;
-	}
-}
-)
-
-
-
-(
-
-~detuneSine = {|f=440|
-	var wobble = 0.002;
-	SinOsc.ar({Rand(f * (1 - wobble), f * (1 + wobble)) }! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
-	//	Pan2.ar(sig,-1);
-};
-
-/*
-
-SynthDef(\ding, {
-	//random velocity
-	//output
-	//Out.ar(0, sig);
-
-}).add;
-*/
-
-fork {
-	var tempo = 120;
-
-	64.do {
-		//Synth(\ding);
-		{
-			var vel = Rand(0.3,1);
-
-			var baseNote = 0;
-
-			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
-
-			//var notes = #[0,2,4,5,7,9,11,12];
-
-			var octave = #[-2,-1,0,1,2].choose;
-
-			//random tone * random octave
-			var f = ( (octave * 12) + baseNote + Prand(notes, inf).asStream.next).midicps;
-
-
-			//var f = notes.choose.midicps / 2;
-			//var f = [73,75].choose.midicps / 2;
-
-
-			//add weird harmonics
-
-			var sig = ~detuneSine.value(f);
-
-			sig = sig + (~detuneSine.value(f * 1/4) * 0.2);
-			sig = sig + (~detuneSine.value(f * 8) * 0.1);
-			sig = sig + (~detuneSine.value(f * 7/3) * 0.05);
-			sig = sig + (~detuneSine.value(f * 16) * 0.2);
-
-			sig = sig * vel;
-
-			sig = LPF.ar(sig, (9500 * vel) + (2500 * SinOsc.kr(Rand(1.5,8))),1);
-			//sig = LPF.ar(sig, -100, 0.8);
-			//sig = Pan2.ar(sig,Rand(-1,1));
-			//sig = Pan2.ar(sig, -1);
-
-			//[1/8,2/8,3/8,1/2].choose.wait;
-
-			Out.ar(0, sig);
-
-			//(60/tempo * [1/8,1/4,1/8,1/8,1/2].choose).wait;
-			(60/tempo * [1/4,1/2].choose).wait;
-			//0.125.wait;
-		}.play;
 	}
 }
 )
@@ -137,14 +120,13 @@ SynthDef(\sawz, { |ffreq = 800, freq = 440, duration = 5 |
 
 	//stereo sine waves slightly out of tune
 	var osc =  SinOsc.ar([freq,freq * (1 + Rand.new(0,0.002))]) * 0.5;
-	var saw;
+
+	//add a stereo saw, slightly detuned
+	var saw = Saw.ar([freq,freq * (2 + Rand.new(0,0.002))]) * 0.5;
 
 	//osc = BPF.ar(osc, 220,0.8);
 	//low pass filter to smooth it out. Is this necessary with sine waves?
 	osc = LPF.ar(osc, ffreq);
-
-	//add a stereo saw, slightly detuned
-	saw = Saw.ar([freq,freq * (2 + Rand.new(0,0.002))]) * 0.5;
 
 	//osc = BPF.ar(osc, ffreq * 1.25, 1);
 	//filter w/ MoogFF filter which swells using envleope matched to duration
