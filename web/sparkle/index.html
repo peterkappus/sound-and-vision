@@ -1,0 +1,136 @@
+<html>
+  <head>
+    <style type='text/css'>
+      body {margin: 0}
+    </style>
+    <script src="../lib/p5.min.js"></script>
+    <!--script src="../lib/p5.sound.min.js"></script-->
+    <script src="https://unpkg.com/p5.webm-capture@1.2.0/dist/p5.webm-capture.js"></script>
+    <!--script src="sketch.js"></script-->
+  </head>
+  <body background="#000">
+    <script>
+      "use strict";
+
+      var p;
+      let c = 0;
+      let canvasWidth = 500;
+      let startSpeed = canvasWidth/80;
+      let maxFrames = 850;
+      let minSize = 0.5;
+      let marginPercent = 0.025;
+      let gravity = 0.025;
+
+      //let particles = [];
+
+      class Particle {
+        constructor(x,y,size,speed,angle,sproutingAge){
+          this.x = x;
+          this.gravity = 0.05;
+          this.y = y;
+          this.speed = speed;
+          this.angle = angle;
+          this.size = size;
+          this.age = 0;
+          //sprout after how many cycles?
+          this.sproutingAge = sproutingAge;
+          this.children = [];
+          this.alive = true;
+          this.brightness = 255;
+        }
+
+        step(){
+          
+          this.children.forEach(particle => {
+            particle.step();
+            //console.log(particle.x);
+          });
+          
+
+          //falling...
+          this.y += (gravity * this.age)
+          
+          if(!this.alive) {
+            return;
+          }
+
+          //kill em when they get to close. 
+          if(this.x < width * marginPercent || this.x > width * (1-marginPercent) || this.y < height * marginPercent || this.y > height * (1 - marginPercent)) {
+            this.alive = false;
+          }
+
+
+
+          let fadeThreshold = height-(height*marginPercent*4);
+
+          let fadeDistance = (height * (1-marginPercent)) - fadeThreshold;
+
+          if(this.y > fadeThreshold) {
+            this.brightness = 255 * (1 - (this.y - fadeThreshold)/fadeDistance);
+          }
+
+          //draw
+          fill(this.brightness);
+          strokeWeight(0.25);
+          ellipse(this.x,this.y,this.size,this.size);
+
+          if(this.age < this.sproutingAge) {
+            //move
+            this.x += this.speed * Math.cos(this.angle);
+            this.y += this.speed * Math.sin(this.angle);
+          }else {
+            //this.alive = false;
+          }
+
+          if(this.age == this.sproutingAge && (!(this.x < width * marginPercent || this.x > width * (1-marginPercent) || this.y < height * marginPercent || this.y > height * (1 - marginPercent)))) {
+            //don't sprout if size already only 1
+            if(this.size > minSize) {
+              for(let i=0; i < random(3,8); i++ ) {
+                this.children.push(new Particle(this.x,this.y,this.size * 0.5, this.speed * 0.9, random(Math.PI*2), int(random(10,50))));
+              }
+            }
+            this.fading = true;
+          }
+
+          //console.log(this.children.length);
+
+         
+          this.age++;
+
+        }
+      }
+
+      function setup() {
+        createCanvas(canvasWidth,19.5/9 * canvasWidth);
+        background(0);
+        frameRate(50);
+
+        p = new Particle(width/2, height*3/4, width/10, startSpeed, -Math.PI/2, 150);
+
+        //turn on when ready to capture
+       enableCapture({
+          frameCount: maxFrames
+        });
+
+      }
+
+      function draw() {
+        background(0);
+        if(c < maxFrames) {
+          p.step();
+          
+          //c = (c + 1) % 360;
+          if(c % 20 == 0) {
+            console.log("frame:" + c);
+          }
+
+          c++;
+          
+        }
+        
+      }
+    </script>
+  </body>
+<body>
+</body>
+</html>

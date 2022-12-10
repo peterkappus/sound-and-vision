@@ -20,42 +20,115 @@ s.boot;
 
 //{SinOsc.ar(440 + (850 * SinOsc.kr(5)))}.scope;
 
+{LPF.ar(Crackle.ar(1.99,0.5),800)}.play;
+
+{BPF.ar({Dust.ar(30, 0.5) ! 2}, 6000,0.5)}.play;
+
+
 
 (
 
+Server.default.options.outDevice_("Default");
+
+Server.killAll;
+s.boot;
+)
+
+
+(
+//5.wait;
+
+s.record();
+
+//initialize a midi client
+MIDIClient.init;
+
+//connect all the possible inputs
+MIDIIn.connectAll;
+
+
+//we'll use this slightly detuned sine wave as the basic building block.
 ~detuneSine = {|f=440|
-	var wobble = 0.004;
-	SinOsc.ar({Rand(f * (1 - wobble), f * (1 + wobble)) } ! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
+	var detuneAmt = 0.005;
+	//each stereo bit detuned slightly differently played via a percussion envelope
+	SinOsc.ar({Rand(f * (1 - detuneAmt), f * (1 + detuneAmt)) } ! 2) * 0.2  * EnvGen.kr(Env.perc(releaseTime:4), doneAction: Done.freeSelf);
+	//0; //useful for "commenting out" the bell sounds altogether.
 };
 
-fork {
-	var tempo = 120;
 
-	128.do {
+
+fork {
+
+	var tempo = 110;
+
+	//various notes
+	var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+	//var notes = #[75,77,85,88,93,95];
+
+	var i = 57;
+	var baseNote = 0;
+
+	//whole tone scale
+	//var noteStream = Pxrand({25 + i; i=i + 2} ! 20, inf).asStream;
+
+
+	var noteStream = Prand(notes,inf).asStream;
+
+
+	256.do {
 		//Synth(\ding);
 		{
 			var vel = Rand(0.4,1);
 
 			var baseNote = 0;
 
-			//various notes
-			var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+			//var crackle = Crackle.ar(1.7,0.2);
+			// Dust with band pass filter to shave off the harsh edges
+			//var dust = BPF.ar({Dust.ar(10, 0.2) ! 2}, 1500,0.8);
+			//Thought a bit of dust might sound cool like an old record but it just annoys me ;-)
+			//I'd rather have it beutifully crisp and pristine!
 
+			var dust  = 0 ; // leave as zero so it doesn't cause errors below when we try to add "dust" to the signal
+
+
+			//var octave = Pxrand(#[-2,-1,0,1,2],inf).asStream.next;
 			var octave = #[-2,-1,0,1,2].choose;
+			//var octave = 0;
 
 			//random tone * random octave
-			var f = ( (octave * 12) + baseNote + Prand(notes, inf).asStream.next).midicps;
+			var f = ( (octave * 12) + baseNote + noteStream.next).midicps;
+			//var f = ( (octave * 12) + baseNote + Pxrand(notes, inf).asStream.next).midicps;
 
 			//signal
 			var sig = ~detuneSine.value(f);
 
-			//add weird harmonics
+			//tiny bit of noise at the front
+			var plunkFilterEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.5));
+			var plunkFreq = 5000;
+
+			/*
+			var plunkFreqEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.5));
+			var plunkWav = Pulse.ar({plunkFreq * Rand.new(0.99,1.01) * plunkFreqEnv} ! 2,0.5);
+			*/
+
+			//the plunk is actually a tiny high pitched square wave
+			var plunkWav = Pulse.ar({plunkFreq * Rand.new(0.80,1.2)} ! 2,0.5);
+			var plunk = LPF.ar(plunkWav, 1000 + (Rand(300,2000) * plunkFilterEnv)) * 0.5 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.025));
+
+			//A bit of white, pink brown, or gray noise are nice, too!
+			var noisePlunkWave = GrayNoise.ar();
+			//var noisePlunk = {BPF.ar(noisePlunkWave, 1500 + (Rand(100,6000) * plunkFilterEnv),0.8) * 0.3 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
+			var noisePlunk = {BPF.ar(noisePlunkWave, 20 + (Rand(100,1000) * plunkFilterEnv),0.35) * 0.25 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
+
+
+			//add some nice otherworldly weird harmonics
 
 			sig = sig + (~detuneSine.value(f * 1/4) * 0.2);
 			sig = sig + (~detuneSine.value(f * 8) * 0.1);
 			sig = sig + (~detuneSine.value(f * 7/5) * 0.01);
 			sig = sig + (~detuneSine.value(f * 16) * 0.1);
 
+			sig = sig + plunk + dust + noisePlunk;
 
 			sig = sig * vel;
 
@@ -63,12 +136,25 @@ fork {
 			// DANGER! If LPF freq gets close to zero, there will be LOUD artefacts.
 			sig = LPF.ar(sig, (12500 * vel) + (3500 * SinOsc.kr(Rand(1.5,8))),1);
 
+			//compand w/ defaults
+			sig = CompanderD.ar(sig);
+
 			Out.ar(0, sig);
 
-			(60/tempo * [1/4,1/2].choose).wait;
+			//(60/tempo * Pxrand([1/4, 1/2, 1/4, 1/8, 3/8, 1/2],inf).asStream.next).wait;
+			(60/tempo * [1/4,1/4, 1/2].choose).wait;
+
 		}.play;
-	}
-}
+	};
+
+// let our notes finish
+5.wait;
+
+//stop recording
+s.stopRecording;
+
+};
+
 )
 
 
@@ -92,19 +178,20 @@ SynthDef(\ding, { |f = 440, amp = 1 |
 fork {
 	20.do {
 		var f = Pxrand(#[25,27,29,31,32,34,35,37,39,40,41,43,45]).asStream.next.midicps;
+		f = f * 2;
 
 		{
 			//var sig = Synth(\ding, [f:880]); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
 			var sig = ~detuneSine.value(f * 2);
 			sig = sig + (~detuneSine.value(f * 3/4));
 			sig = sig + (~detuneSine.value(f * 4));
-			sig = sig + (~detuneSine.value(f * 7/5));
+			sig = sig + (~detuneSine.value(f * 7/5) * 0.1);
 
 			//sig += Synth(\ding ); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
 			//var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.3);
 			Out.ar(0, sig);
 		}.play;
-		1.wait;
+		0.25.wait;
 	}
 }
 )
