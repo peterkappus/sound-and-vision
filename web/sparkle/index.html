@@ -12,25 +12,32 @@
     <script>
       "use strict";
 
-      var p;
+      //var p;
       let c = 0;
+      let maxBigParticles = 60;
+      let growTime = 2;
       let canvasWidth = 500;
-      let startSpeed = canvasWidth/80;
-      let maxFrames = 850;
+      let canvasHeight = int(19.5/9 * canvasWidth);
+      if(canvasHeight % 2 ) { canvasHeight++}
+      let startSpeed = canvasWidth/200;
+      let maxFrames = 1500;
       let minSize = 0.5;
       let marginPercent = 0.025;
       let gravity = 0.025;
+      let then = Date.now();
 
-      //let particles = [];
+
+      let particles = [];
 
       class Particle {
-        constructor(x,y,size,speed,angle,sproutingAge){
+        constructor(x,y,targetSize,speed,angle,sproutingAge){
           this.x = x;
           this.gravity = 0.05;
           this.y = y;
           this.speed = speed;
           this.angle = angle;
-          this.size = size;
+          this.size = 0;
+          this.targetSize = targetSize;
           this.age = 0;
           //sprout after how many cycles?
           this.sproutingAge = sproutingAge;
@@ -46,20 +53,21 @@
             //console.log(particle.x);
           });
           
-
-          //falling...
-          this.y += (gravity * this.age)
-          
           if(!this.alive) {
             return;
           }
+
+          if(this.age <= growTime){
+            this.size = (this.age/growTime) * this.targetSize;
+          }
+          
+          //falling...
+          this.y += (gravity * this.age)
 
           //kill em when they get to close. 
           if(this.x < width * marginPercent || this.x > width * (1-marginPercent) || this.y < height * marginPercent || this.y > height * (1 - marginPercent)) {
             this.alive = false;
           }
-
-
 
           let fadeThreshold = height-(height*marginPercent*4);
 
@@ -78,8 +86,6 @@
             //move
             this.x += this.speed * Math.cos(this.angle);
             this.y += this.speed * Math.sin(this.angle);
-          }else {
-            //this.alive = false;
           }
 
           if(this.age == this.sproutingAge && (!(this.x < width * marginPercent || this.x > width * (1-marginPercent) || this.y < height * marginPercent || this.y > height * (1 - marginPercent)))) {
@@ -100,13 +106,31 @@
         }
       }
 
+      function launchParticle() {
+        if(particles.length < maxBigParticles){
+          particles.push(new Particle(
+            random(width*0.2, width *0.8), 
+            random(height * 0.2, height * 0.5),
+            width/10, 
+            startSpeed,
+            -Math.PI/2, 
+            10
+            ));
+        }
+      }
+
       function setup() {
-        createCanvas(canvasWidth,19.5/9 * canvasWidth);
+        createCanvas(canvasWidth,canvasHeight);
         background(0);
         frameRate(50);
 
-        p = new Particle(width/2, height*3/4, width/10, startSpeed, -Math.PI/2, 150);
+        //launch at regular intervals
+        let interval = setInterval(launchParticle, 8000);
+        
+        //first
+        launchParticle();
 
+        
         //turn on when ready to capture
        enableCapture({
           frameCount: maxFrames
@@ -117,11 +141,19 @@
       function draw() {
         background(0);
         if(c < maxFrames) {
-          p.step();
+          particles.forEach(p=>{
+            p.step();
+          });
+
           
           //c = (c + 1) % 360;
           if(c % 20 == 0) {
-            console.log("frame:" + c);
+            //let timeSinceLastUpdate = (Date.now() - then)/1000;
+            //let fps = 20 / timeSinceLastUpdate;
+            //console.log("Time:" + timeSinceLastUpdate + "  frame:" + c);
+            //then = Date.now();
+
+            console.log("Frame:" + c);
           }
 
           c++;

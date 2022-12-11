@@ -1,4 +1,11 @@
+(
 
+
+
+
+
+
+)
 
 //Server.default.options.device = "MacBook Pro Speakers";
 //Server.default.options.outDevice_("Built-in Output");
@@ -30,7 +37,7 @@ s.boot;
 
 Server.default.options.outDevice_("Default");
 
-Server.killAll;
+Server .killAll;
 s.boot;
 )
 
@@ -59,7 +66,7 @@ MIDIIn.connectAll;
 
 fork {
 
-	var tempo = 110;
+	var tempo = 120;
 
 	//various notes
 	var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
@@ -75,10 +82,10 @@ fork {
 	var noteStream = Prand(notes,inf).asStream;
 
 
-	256.do {
+	92.do {
 		//Synth(\ding);
 		{
-			var vel = Rand(0.4,1);
+			var vel = Rand(0.3,1);
 
 			var baseNote = 0;
 
@@ -104,7 +111,7 @@ fork {
 
 			//tiny bit of noise at the front
 			var plunkFilterEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.5));
-			var plunkFreq = 5000;
+			var plunkFreq = 3000;
 
 			/*
 			var plunkFreqEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.5));
@@ -112,13 +119,15 @@ fork {
 			*/
 
 			//the plunk is actually a tiny high pitched square wave
-			var plunkWav = Pulse.ar({plunkFreq * Rand.new(0.80,1.2)} ! 2,0.5);
-			var plunk = LPF.ar(plunkWav, 1000 + (Rand(300,2000) * plunkFilterEnv)) * 0.5 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.025));
+			//var plunkWav = Pulse.ar({plunkFreq * Rand.new(0.80,1.2)} ! 2,0.5);
+			var plunkWav = Saw.ar({plunkFreq * Rand.new(0.85,1.15)} ! 2,0.5);
+			var plunk = BPF.ar(plunkWav, 250 + (Rand(300,1000) * plunkFilterEnv),0.5) * 0.8 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25));
 
 			//A bit of white, pink brown, or gray noise are nice, too!
-			var noisePlunkWave = GrayNoise.ar();
-			//var noisePlunk = {BPF.ar(noisePlunkWave, 1500 + (Rand(100,6000) * plunkFilterEnv),0.8) * 0.3 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
-			var noisePlunk = {BPF.ar(noisePlunkWave, 20 + (Rand(100,1000) * plunkFilterEnv),0.35) * 0.25 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
+			var noisePlunkWave = PinkNoise.ar();
+			var noisePlunkEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.2));
+
+			var noisePlunk = {BPF.ar(noisePlunkWave, 20 + (Rand(20,500) * noisePlunkEnv),0.85) * 0.35 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
 
 
 			//add some nice otherworldly weird harmonics
@@ -128,13 +137,14 @@ fork {
 			sig = sig + (~detuneSine.value(f * 7/5) * 0.01);
 			sig = sig + (~detuneSine.value(f * 16) * 0.1);
 
-			sig = sig + plunk + dust + noisePlunk;
+			sig = sig + noisePlunk + plunk;
+			//sig = plunk;
 
 			sig = sig * vel;
 
 			//low pass filter based on velocity + a wobbly higher filter from 1.5 to 8 hz
 			// DANGER! If LPF freq gets close to zero, there will be LOUD artefacts.
-			sig = LPF.ar(sig, (12500 * vel) + (3500 * SinOsc.kr(Rand(1.5,8))),1);
+			sig = LPF.ar(sig, 4000 + (5500 * vel) + (4500 * SinOsc.kr(Rand(1.5,12))));
 
 			//compand w/ defaults
 			sig = CompanderD.ar(sig);
@@ -182,16 +192,42 @@ fork {
 
 		{
 			//var sig = Synth(\ding, [f:880]); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
-			var sig = ~detuneSine.value(f * 2);
-			sig = sig + (~detuneSine.value(f * 3/4));
-			sig = sig + (~detuneSine.value(f * 4));
-			sig = sig + (~detuneSine.value(f * 7/5) * 0.1);
+			var sig = ~detuneSine.value(f * 2) * 0.2;
+			sig = sig + (~detuneSine.value(f * 3/4) * 0.2);
+			sig = sig + (~detuneSine.value(f * 4) * 0.2);
+			sig = sig + (~detuneSine.value(f * 7/5) * 0.2);
 
 			//sig += Synth(\ding ); //SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)]);
 			//var sig = (SinOsc.ar([Rand(f * 0.99, f * 1.01), Rand(f * 0.99, f * 1.01)] * 16/3) * 0.3);
 			Out.ar(0, sig);
 		}.play;
 		0.25.wait;
+	}
+}
+)
+
+
+
+
+(
+
+// ~envMaker = {|attack = 0.01; release = 0.01|
+// EnvGen.kr(Env.perc(attack, release));
+// }
+
+fork {
+	4.do{
+		{
+	//		var env =
+			var noiseEnv = EnvGen.kr(Env.perc(0.001,0.5));
+
+			var noise = LPF.ar(EnvGen.kr(Env.perc(0.001,0.12)) * 0.1 * WhiteNoise.ar(), 17500 * noiseEnv);
+			//var noise = LPF.ar(EnvGen.kr(Env.perc(0.001,0.12)) * 0.2 * WhiteNoise.ar(), 12500);
+
+			var sin = SinOsc.ar({EnvGen.kr(Env.perc(0.001,0.5,curve:-4)) * Rand(438,442) ! 2}) * EnvGen.kr(Env.perc(0.0015,0.75), doneAction: Done.freeSelf) * 0.5;
+			Out.ar(0,noise + sin);
+		}.play;
+		1.wait;
 	}
 }
 )
