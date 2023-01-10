@@ -9,6 +9,12 @@ Check individual folders for specific projects & their respective READMEs.
 * `web` - Things which run in a web browser
 * `utils` - Utilities for stitching together video and audio files, resizing videos for instagram, etc.
 
+## Caveat Emptor!
+Buyer beware ;-) Sometimes I pretend to be a "real engineer" but working on this repo is not one of those times ;-) Expect really sloppy code, poor style, little to no documentation, things that break and move and change without warning, zero tests, etc. One day I'll clean up my act but for today, this is really just a fun sandbox to play with and make stuff that I like ;-) 
+
+## License
+What license? I'm a bit clueless about licenses so how about this: use this code for inspiration, if you find it useful and make something cool, please give me credit wherever possible. kthanxbai.
+
 
 ## Software Requirements
 1. [Super Collider](https://supercollider.github.io/)
