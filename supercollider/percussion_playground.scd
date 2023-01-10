@@ -29,7 +29,7 @@ s.boot;
 
 {LPF.ar(Crackle.ar(1.99,0.5),800)}.play;
 
-{BPF.ar({Dust.ar(30, 0.5) ! 2}, 6000,0.5)}.play;
+{BPF.ar({Dust.ar(30, 0.5) ! 2}, LFNoise2.kr(10).exprange(220,12880),0.5)}.play;
 
 
 
@@ -37,7 +37,7 @@ s.boot;
 
 Server.default.options.outDevice_("Default");
 
-Server .killAll;
+Server.killAll;
 s.boot;
 
 
@@ -121,6 +121,7 @@ MIDIIn.connectAll;
 	fork {
 
 		var tempo = 120;
+		//var tempo = 40;
 
 		//various notes
 		var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
@@ -137,9 +138,9 @@ MIDIIn.connectAll;
 
 		var noteStream = Prand(notes,inf).asStream;
 
-		64.do {
+		128.do {
 			{
-				//DANGER! low velocity can really mess with the LPF below
+				//DANGER! low velocity can really mess with the LPF on the bell
 				var velocity = Rand(0.1,1);
 
 				//var crackle = Crackle.ar(1.7,0.2);
