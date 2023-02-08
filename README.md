@@ -15,7 +15,6 @@ Buyer beware ;-) Sometimes I pretend to be a "real engineer" but working on this
 ## License
 What license? I'm a bit clueless about licenses so how about this: use this code for inspiration, if you find it useful and make something cool, please give me credit wherever possible. kthanxbai.
 
-
 ## Software Requirements
 1. [Super Collider](https://supercollider.github.io/)
 2. Chrome Browser (for visualisation)

@@ -9,11 +9,6 @@ To run these, you'll probably have to serve the files locally.
 If you have python installed, you can use the simple server:
 
 ```
-python -m SimpleHTTPServer 8000
-```
-
-Using python 3? Try this
-```
 python3 -m http.server 8000
 ```
 
