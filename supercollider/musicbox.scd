@@ -12,9 +12,9 @@
 
 //useful for transposing
 ~baseNote = 7;
-~releaseTime = 3;
-~maxCount = 10;
-~durations = [1/2,3/8];
+~releaseTime = 5;
+~maxCount = 200;
+~durations = [1/8,1/4,1/2,3/8];
 
 )
 
