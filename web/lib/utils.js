@@ -14,3 +14,12 @@ function stopRecording() {
   recorder.stop();
   save(soundFile, 'abstraktor.wav');
 }
+
+
+//save
+function keyPressed() {
+  //alert(keyCode);
+  if(keyCode == 68) {
+    save("abstraktor" + Date.now() + ".svg");
+  }
+}

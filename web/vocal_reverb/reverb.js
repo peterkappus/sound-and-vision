@@ -125,7 +125,7 @@ function draw() {
 
       //visual decay
       verb.level *= 0.995;//verb.time / maxTime;
-      debug(verb.level);
+      //debug(verb.level);
 
     });
   }

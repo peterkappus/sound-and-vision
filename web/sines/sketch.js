@@ -4,13 +4,14 @@
 function setup() {
   var canvasSideLength = (window.innerHeight > window.innerWidth) ? window.innerWidth : window.innerHeight;
 
-  createCanvas(canvasSideLength, canvasSideLength);
+  createCanvas(canvasSideLength, canvasSideLength,SVG);
 
   background(255);
 
-  flower();
+  xflower();
 
-
+  //save("mySVG.svg"); // give file name
+  //print("saved svg");
 }
 
 
@@ -25,32 +26,29 @@ function flower(x = 0.5) {
 	stroke(random(50),80,random(80));
 	beginShape();
 
-	var rad = width*0.15;
-	var count = 2500;// random(100,5000);
+	var radius = width * 0.005;
+	var count = 5000;// random(100,5000);
 
-	var factor = randFactor();
-	var factorB = randFactor();
+	var k = random(0,50);
+	
+	var radiusDelta = 1.005;
+	var theta = 0;
+	var angleIncrement = 0.01;
 
-	/*var k = Math.PI*0.2/(random(0.0001,0.001))
-	var v = Math.PI*16/((random(0.0001,0.001)));
-  */
-
-	var k = Math.PI/(random(0.0001,0.001))
-	var v = Math.PI/((random(0.0001,0.001)));
-  
-	var dr = 1.00038;
-	var angle = 0;
-	var angleIncrement = 5;
 	//var v = k * factor;
 	//$("#debug").html("factorA: " + factor + " FactorB: " + factorB)// + " k: " + k + " v: " + v + "count: " + count);
 	translate(width / 2, height / 2);
 
 	for(var i = 0; i < count; i++) {
 		//curveVertex(sin(angle * k) * rad, sin(angle * v) * rad);
-		curveVertex(rad * Math.cos(angle), rad * Math.sin(angle));
+		var x = radius * Math.cos(k * theta) * Math.cos(theta);
+		var y = radius * Math.sin(k * theta) * Math.cos(theta);
 
-		angle += angleIncrement;
-		rad *= dr;
+		curveVertex(x,y);
+		//curveVertex(rad * Math.cos(angle), rad * Math.sin(angle));
+
+		theta += angleIncrement;
+		radius *= radiusDelta;
 	}
 	endShape();
 	pop();
