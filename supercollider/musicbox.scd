@@ -11,10 +11,11 @@
 ~tempo = 120;
 
 //useful for transposing
-~baseNote = 7;
+~baseNote = 0;
 ~releaseTime = 5;
-~maxCount = 200;
-~durations = [1/8,1/4,1/2,3/8];
+~maxCount = 255;
+~durations = [1/4,1/2,3/8];
+//~durations = [1/2,1/4];
 
 )
 
@@ -108,7 +109,7 @@ s.boot;
 	// DANGER! If LPF freq gets close to zero, there will be LOUD artefacts.
 	// Ensure values for "vel" don't get too low...
 
-	sig = LPF.ar(sig, lfoAmt + (5500 * vel) + (lfoAmt * SinOsc.kr(Rand(1.5,15))));
+	sig = LPF.ar(sig, lfoAmt + (5500 * vel) + (lfoAmt * SinOsc.kr(Rand(1.5,10))));
 
 	//modulate volume, too
 	sig = sig * SinOsc.kr(Rand(1.5,10),mul:volumeLFOAmt,add:(1-volumeLFOAmt));
@@ -120,7 +121,7 @@ s.boot;
 	Out.ar(0, sig);
 	//Out.ar(~reverbBus,sig)
 
-	vel.postln;
+	vel.round(0.01).postln;
 
 };
 
@@ -151,7 +152,7 @@ s.boot;
 		while { i < ~maxCount } {
 			{
 				//DANGER! low velocity can really mess with the LPF on the bell
-				var velocity = rrand(0.05,1);
+				var velocity = rrand(0.05,0.9);
 
 				// var crackle = Crackle.ar(1.7,0.2);
 				// Dust with band pass filter to shave off the harsh edges
@@ -201,12 +202,30 @@ MIDIdef.noteOn(\noteOn,{
 	[veloc,num,chan].postln;
 
 	// Use the bottom key on my digital piano as a simple "button" to trigger the arp
-	if(num == 21, {
+	if(num == 36, {
 		~goArp.value;
 	} , {
 		{~bell.value(num.midicps,veloc.linexp(0,127,0.01,1)) * 0.2}.play;
 	});
 });
+
+MIDIdef.cc(\cc,{
+	arg val, num;
+	num.postln;
+	{
+		var filterFreq = Rand(150,14500);
+	var attack = Rand(5,40);
+	var release = Rand(30,100);
+	var mul = 0.3;
+	var q = 1.5;
+	var rq = 0.7;
+
+	var sig = EnvGen.ar(Env.perc(attack,release),doneAction: Done.freeSelf) * Dust.ar([20,19],mul);
+
+	BPF.ar(sig,filterFreq,rq);
+	}.play;
+});
+
 
 
 // if you opt for automatic recording, enable this to stop when the notes are done.

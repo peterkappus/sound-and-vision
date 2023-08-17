@@ -282,7 +282,7 @@ SynthDef(\sawz, { |ffreq = 800, freq = 440, duration = 5 |
 	osc = saw + osc;
 
 	//output
-	Out.ar(0, env * osc * 0.4);
+	Out.ar(0, env * osc * 0.2);
 }).add;
 
 
@@ -339,6 +339,10 @@ fork{
 
 
 )
+
+
+
+
 
 //Env.perc(0.001,3).plot;
 
