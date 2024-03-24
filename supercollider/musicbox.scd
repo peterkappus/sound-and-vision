@@ -8,13 +8,30 @@
 
 // Setup
 (
-~tempo = 120;
+~maxCount = 128;
+~tempo = 80;
+~releaseTime = 02;
+~octaves = #[-2,-1,0,1,2];
+//~octaves = #[0];
+~durations = [1/4,1/2,3/8];
+
+
+~notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+//~notes =#[71,73,78,82,85,87,90];
+//~notes =#[35,38,39,41,48];//71,73,78,82,85,87,90];
+~noteStream = Prand(~notes,inf).asStream;
+//~octaves = #[-2,-1,0,1,2];
+//~octaves =#[0];
+
+
+//~i = 57;
+//~noteStream = Pxrand({25 + i; i=i + 2} ! 20, inf).asStream;
+
 
 //useful for transposing
 ~baseNote = 0;
-~releaseTime = 5;
-~maxCount = 255;
-~durations = [1/4,1/2,3/8];
+//~durations = [3/4,1/4,1/2];
+//~durations = [1/4,3/8];
 //~durations = [1/2,1/4];
 
 )
@@ -40,6 +57,20 @@ s.boot;
 
 
 (
+
+//a dictionary object to hold midi CC values.
+// The key is the midi control number (e.g. "12") and the value is the value of the controller (0-127)
+
+~ccParams = Dictionary();
+
+(17..24).do { |i|
+	~ccParams.put(i,1);
+};
+
+~getControlParam = { |key|
+	~ccParams.at(key).linlin(0,127,0,1);
+};
+
 // Sometimes it's nice to record the output every time and then comb through and save the ones I like.
 //s.record();
 
@@ -81,7 +112,7 @@ s.boot;
 
 	// Or a high-pitched saw
 	var plunkWav = Saw.ar({plunkFreq * Rand.new(0.85,1.15)} ! 2,0.5);
-	var plunk = BPF.ar(plunkWav, 250 + (Rand(300,1000) * plunkFilterEnv),0.5) * 0.8 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25));
+	var plunk = BPF.ar(plunkWav, 250 + (Rand(300,1000) * plunkFilterEnv),0.5) * 0.8 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25)) * ~getControlParam.value(21);
 
 	//A bit of white, pink brown, or gray noise are nice, too!
 	var noisePlunkWave = PinkNoise.ar();
@@ -92,10 +123,10 @@ s.boot;
 
 	//add some nice/weird otherworldly weird harmonics using simple math ratios
 
-	sig = sig + (~detuneSine.value(freq * 1/4) * 0.2);
-	sig = sig + (~detuneSine.value(freq * 8) * 0.1);
-	sig = sig + (~detuneSine.value(freq * 7/5) * 0.01);
-	sig = sig + (~detuneSine.value(freq * 16) * 0.1);
+	sig = sig + (~detuneSine.value(freq * 1/4) * 0.2 * ~getControlParam.value(17));
+	sig = sig + (~detuneSine.value(freq * 8) * 0.1 * ~getControlParam.value(18));
+	sig = sig + (~detuneSine.value(freq * 7/5) * 0.01 * ~getControlParam.value(19));
+	sig = sig + (~detuneSine.value(freq * 16) * 0.1  * ~getControlParam.value(20));
 
 	sig = sig + noisePlunk + plunk;
 
@@ -118,6 +149,8 @@ s.boot;
 	// nah, let's keep all the dynamics!
 	//sig = CompanderD.ar(sig);
 
+//	sig = sig * 0.3;
+	sig = Pan2.ar(sig, 0.9);
 	Out.ar(0, sig);
 	//Out.ar(~reverbBus,sig)
 
@@ -136,16 +169,19 @@ s.boot;
 		//var tempo = 40;
 
 		//various notes
-		var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
+		//var notes = #[57,59,61,64,67,71,73,74,76,78,79,81,83,85,86,88,90,93,95];
 		//var notes = #[75,77,85,88,93,95];
+		//var notes = #[61,64];
 
 
 		//whole tone scale
 		//var i = 57;
 		//var noteStream = Pxrand({25 + i; i=i + 2} ! 20, inf).asStream;
 
+		//now set globally as ~noteStream
+		//var noteStream = Prand(~notes,inf).asStream;
 
-		var noteStream = Prand(notes,inf).asStream;
+
 
 		var i = 0;
 
@@ -161,12 +197,12 @@ s.boot;
 				// I'd rather have it beutifully crisp and pristine!
 
 				//var octave = Pxrand(#[-2,-1,0,1,2],inf).asStream.next;
-				var octave = #[-2,-1,0,1,2].choose;
+				var octave = ~octaves.choose;
 //				(octave).postln;
 				//var octave = 0;
 
 				// random tone * random octave
-				var f = ( (octave * 12) + ~baseNote + noteStream.next).midicps;
+				var f = ( (octave * 12) + ~baseNote + ~noteStream.next).midicps;
 
 				//var f = ( (octave * 12) + ~baseNote + Pxrand(notes, inf).asStream.next).midicps;
 				~bell.value(freq: f,vel: velocity);
@@ -202,33 +238,39 @@ MIDIdef.noteOn(\noteOn,{
 	[veloc,num,chan].postln;
 
 	// Use the bottom key on my digital piano as a simple "button" to trigger the arp
-	if(num == 36, {
+	/*if(num == 36, {
 		~goArp.value;
 	} , {
 		{~bell.value(num.midicps,veloc.linexp(0,127,0.01,1)) * 0.2}.play;
-	});
+	});*/
+
+	{~bell.value(num.midicps,veloc.linlin(0,127,0.02,1)) * 0.2}.play;
 });
+
 
 MIDIdef.cc(\cc,{
 	arg val, num;
 	num.postln;
+
+	~ccParams.put(num,val);
+
 	{
 		var filterFreq = Rand(150,14500);
-	var attack = Rand(5,40);
-	var release = Rand(30,100);
+	var attack = Rand(5,10);
+	var release = Rand(30,10);
 	var mul = 0.3;
 	var q = 1.5;
 	var rq = 0.7;
 
-	var sig = EnvGen.ar(Env.perc(attack,release),doneAction: Done.freeSelf) * Dust.ar([20,19],mul);
 
-	BPF.ar(sig,filterFreq,rq);
+	//var sig = EnvGen.ar(Env.perc(attack,release),doneAction: Done.freeSelf) * Dust.ar([20,19],mul);
+	//BPF.ar(sig,filterFreq,rq);
 	}.play;
 });
 
 
 
-// if you opt for automatic recording, enable this to stop when the notes are done.
+//if you opt for automatic recording, enable this to stop when the notes are done.
 
 // let our notes finish
 //5.wait;

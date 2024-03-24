@@ -92,7 +92,7 @@ MIDIIn.connectAll;
 //broadcast a parm change to all current notes
 ~broadcastParam = {|key, value|
 
-	("Updating: " + key).postln;
+	("Updating: " + key + " to " + value).postln;
 
 	//update all sustained notes
 	for(0,~notes.size-1, {|i|
@@ -184,10 +184,12 @@ MIDIdef.noteOff(\noteOff,{
 //update Effects parameters
 ~updateFx = {
 	arg param,ccNum,mappedLowVal,mappedHiVal;
-	~fx.set(param,ccNum.linexp(0,127,mappedLowVal,mappedHiVal));
-	("updating: " + param).postln;
+	~val = ccNum.linexp(0,127,mappedLowVal,mappedHiVal);
+	~fx.set(param,~val);
+	("updating: " + param + " to " + ~val).postln;
 
 };
+
 
 MIDIdef.cc(\ccFunc, {
 	arg ccNum, chan;
@@ -207,9 +209,9 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 20) {
-		"updating room".postln;
-		~fx.set(\room, ccNum.linexp(0,127,0.01,30));
+		~updateFx.set(\room,ccNum,0,127,0.01,1);
 	};
+
 
 	if(chan == 19) {
 		~filterFreq = ccNum.linexp(0,127,100,12000);
@@ -319,24 +321,26 @@ SynthDef.new(\tone, {
 
 	//sig = sig + (RLPF.ar(Pulse.ar(freq/2 * LFNoise1.kr(0.1!2).bipolar(detune.neg, detune).midiratio), filterFreq,0.5) * 0.3 * squareVol);// * LFNoise1.kr(0.1
 
-	/*
-	10.do {
+
+	//extra trangley layers!
+	8.do {
 		sum = 0;
 		temp = VarSaw.ar(
-			freq * {Rand(0.99,1.01)}!2,
+			freq * LFNoise1.kr(0.1!12).bipolar(detune.neg, detune).midiratio,
 			{Rand(0.0,1.0)}!2,
-			{ExpRand(0.005,0.05)}!2
+			{ExpRand(0.25,0.95)}!2
 		);
 		sum = sum + temp;
 	};
-	sig = sum * 0.5 * env;
-	*/
+	sig = sig + LPFVS6.ar(sum, (filterFreq + vol.linexp(0,127,100,10000)) * ~filterEnv,0.8)  * 0.5 * env;
+
 
 
 	//assign each of the 16 voices a different amplitude
 	//sig = sig * LFNoise1.kr(1!16).exprange(0.2,1);
 
 	sig = Splay.ar(sig);
+	//pan = Rand(-1,1);
 	sig = Balance2.ar(sig[0],sig[1],pan);
 	sig = sig * env * vol;
 

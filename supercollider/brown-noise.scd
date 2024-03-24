@@ -48,13 +48,18 @@
 	var release = Rand(20,80);
 
 	var filterFreq = Rand(150,12500);
-	var freq = 440 * 2 * 1/12;
+	var freq = 440 * 4 * 1/12;
 	var diff = Rand(0.001,0.002);
 
 	//LFNoise2.kr(0.05,0.1,filterFreq);
 	EnvGen.ar(Env.perc(attack, release),doneAction: Done.freeSelf) * LPF.ar(SinOsc.ar([freq * (1-Rand(0.01,diff)), freq * (1+Rand(0.01,diff))]),filterFreq) * 0.2;
 
 }.play;
+)
+
+(
+// when using with musicbox.scd
+// ~goArp.value;
 )
 
 s.meter;
