@@ -209,7 +209,7 @@ MIDIdef.cc(\ccFunc, {
 	};
 
 	if(chan == 20) {
-		~updateFx.set(\room,ccNum,0,127,0.01,1);
+		~updateFx.set(\room,ccNum,0.01,1);
 	};
 
 
