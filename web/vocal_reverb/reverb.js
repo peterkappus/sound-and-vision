@@ -18,21 +18,11 @@ var panning = 0;
 //press "M" to mute
 //press ENTER to save
 
+let audioIn;
+
+
 function setup() {
   c = createCanvas(window.innerWidth,window.innerHeight);
-  /*a = createDiv('this is some text');
-  a.style("font-size: 5rem");
-  a.parent("header");
-  a.touchStarted(setReverb);
-  a.style("width: 20%; min-height: 5rem; background: #00f");
-  */
-  
-  /*timeSlider = createSlider(0, maxTime, reverbTime, 1)
-  timeSlider.position(50, 50);
-  timeSlider.style('width', '80%');
-  */
-    
-  startRecording();
   createVoice(reverbTime);
 }
 
@@ -146,6 +136,11 @@ function stopRecording() {
   save(soundFile, 'abstraktor.wav');
 }
 
+function mousePressed() {
+  userStartAudio();
+  audioSetup();
+}
+
 function keyPressed() {
   //alert();
     getAudioContext().resume()
@@ -200,4 +195,22 @@ function mute(state) {
 
 function toggleMute() {
   mute(!muted);
+}
+
+
+
+
+function audioSetup(){
+  text('getting sources...', 0, 20);
+  audioIn = new p5.AudioIn();
+  audioIn.getSources(gotSources);
+}
+
+function gotSources(deviceList) {
+  if (deviceList.length > 0) {
+    //set the source to the first item in the deviceList array
+    audioIn.setSource(0);
+    let currentSource = deviceList[audioIn.currentSource];
+    text('set source to: ' + currentSource.deviceId, 5, 20, width);
+  }
 }

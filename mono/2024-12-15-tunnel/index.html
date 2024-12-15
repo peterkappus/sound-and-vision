@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circle Animation with Sound</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js-sound/1.6.0/addons/p5.sound.min.js"></script>
+</head>
+<body>
+<script>
+// Canvas dimensions for optimal YouTube landscape video (1920x1080)
+let canvasWidth = 1920;
+let canvasHeight = 1080;
+
+let circleRadius;
+let maxRadius;
+let startTime;
+let duration = 10000; // Animation duration in milliseconds (10 seconds)
+
+let osc; // Oscillator for sound
+let isSilent = false; // Silence flag
+
+function setup() {
+  createCanvas(canvasWidth, canvasHeight);
+  background(0);
+  noStroke();
+
+  maxRadius = min(width, height) * 0.9; // Circle fills most of the screen
+  circleRadius = maxRadius;
+  startTime = millis();
+
+  // Initialize sound
+  osc = new p5.Oscillator('sine');
+  osc.start();
+  osc.freq(200); // Start frequency 200 Hz
+  osc.amp(0.5, 0.1); // Start amplitude 0.5
+}
+
+function draw() {
+  let elapsedTime = millis() - startTime;
+
+  if (elapsedTime <= duration) {
+    // Clear screen
+    background(0);
+
+    // Shrink the circle
+    let progress = elapsedTime / duration;
+    circleRadius = maxRadius * (1 - progress);
+    fill(255);
+    circle(width / 2, height / 2, circleRadius * 2);
+
+    // Update frequency from 200 Hz to 60 Hz
+    let freq = lerp(200, 60, constrain(progress, 0, 1));
+    osc.freq(freq);
+
+    // Fade out the amplitude in the last 2 seconds
+    if (elapsedTime > duration - 2000) {
+      let fadeProgress = (elapsedTime - (duration - 2000)) / 2000;
+      osc.amp(0.5 * (1 - fadeProgress));
+    }
+  } else {
+    if (!isSilent) {
+      // Stop the oscillator during the silence period
+      osc.amp(0, 0.1);
+      isSilent = true;
+    }
+    // Silence and black screen for 2 seconds before repeating
+    background(0);
+    if (elapsedTime > duration + 2000) {
+      resetAnimation();
+    }
+  }
+}
+
+function resetAnimation() {
+  startTime = millis();
+  circleRadius = maxRadius;
+  isSilent = false;
+  osc.amp(0.5, 0.1);
+  osc.freq(200);
+}
+</script>
+</body>
+</html>

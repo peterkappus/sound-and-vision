@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive p5.js Canvas with Save Options</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script src="https://unpkg.com/p5.js-svg@1.5.1"></script>
+  
+  <style>
+    body {
+      margin: 0; /* Remove margin around the canvas */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #000; 
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let canvas;
+    let isSVG = false;
+    
+    function setup() {
+      createResponsiveCanvas();
+    }
+    
+    function windowResized() {
+      createResponsiveCanvas();
+    }
+    
+    function createResponsiveCanvas() {
+      let w = h = min(windowWidth, windowHeight);
+      
+      /* Instagram Story dimensions */
+      /*h = 1080;
+      h = 1920;
+      */
+
+
+      if (canvas) canvas.remove(); // Remove existing canvas before creating a new one
+      
+      if (isSVG) {
+        canvas = createCanvas(w, h, SVG); // SVG mode
+      } else {
+        canvas = createCanvas(w, h); // Default P2D mode
+      }
+      
+      canvas.parent(document.body); // Attach canvas to body
+      draw();
+    }
+    
+    function draw() {
+      background(0); // White background
+      let margin = 0.1 * width; // 10% margin
+      
+      let discDiameter = width - 2 * margin;
+      
+      fill(255); // Black fill for the disc
+      noStroke();
+      ellipse(width / 2, height / 2, discDiameter, discDiameter);
+    }
+    
+    function keyPressed() {
+      if (key === 's') {
+        saveCanvas(canvas, 'disc_image', 'jpg'); // Save as PNG
+      } else if (key === 'v') {
+        save("mySVG.svg"); // give file name
+        
+        isSVG = true; // Enable SVG mode
+        createResponsiveCanvas(); // Recreate canvas in SVG mode
+        save("mySVG.svg"); // give file name
+        isSVG = false; // Reset mode
+        createResponsiveCanvas(); // Switch back to raster mode
+        
+      }
+    }
+  </script>
+</body>
+</html>

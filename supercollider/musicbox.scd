@@ -10,7 +10,7 @@
 (
 ~maxCount = 128;
 ~tempo = 80;
-~releaseTime = 02;
+~releaseTime = 04;
 ~octaves = #[-2,-1,0,1,2];
 //~octaves = #[0];
 ~durations = [1/4,1/2,3/8];
@@ -158,7 +158,6 @@ s.boot;
 
 };
 
-
 // a nice plunky automagic arpy thing. Get's triggered when you hit a low, low A (see below)
 ~goArp = { |baseNote = 57|
 
@@ -238,11 +237,11 @@ MIDIdef.noteOn(\noteOn,{
 	[veloc,num,chan].postln;
 
 	// Use the bottom key on my digital piano as a simple "button" to trigger the arp
-	/*if(num == 36, {
+	if(num == 36, {
 		~goArp.value;
 	} , {
 		{~bell.value(num.midicps,veloc.linexp(0,127,0.01,1)) * 0.2}.play;
-	});*/
+	});
 
 	{~bell.value(num.midicps,veloc.linlin(0,127,0.02,1)) * 0.2}.play;
 });

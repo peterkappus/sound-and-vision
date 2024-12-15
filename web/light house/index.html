@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>p5.js Sound Example with Pause/Resume and Fullscreen</title>
+  <!-- Include the p5.js library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+  <!-- Include the p5.sound library via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+  <style>
+    /* Remove margin, padding, and border from the body and html elements */
+    body, html {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      overflow: hidden; /* Prevent scrollbars */
+    }
+    /* Ensure the canvas covers the entire window */
+    canvas {
+      display: block; /* Remove default inline-block spacing */
+      position: absolute; /* Position the canvas absolutely */
+      top: 0;
+      left: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    let osc;       // Variable to hold the oscillator
+    let envelope;  // Variable to hold the envelope
+    let duration = 1100; // Duration in milliseconds (1 second)
+    let startTime; // Variable to keep track of the current cycle start time
+    let paused = false; // Variable to track the paused state
+    let lastTimePaused; // Variable to keep track of the time when paused
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight);  // Create a canvas that fills the window
+      noStroke();             // Disable strokes for shapes
+      background(0);          // Set the background to black
+
+      // Initialize the sine wave oscillator
+      osc = new p5.Oscillator('sine');
+      osc.freq(220);  // Set the frequency to 220 Hz
+
+      // Create an envelope with attack, decay, sustain, and release times
+      envelope = new p5.Envelope();
+      envelope.setADSR(0.05, 0.1, 0.5, 0.5);  // Attack, Decay, Sustain, Release
+      envelope.setRange(1, 0);  // Full amplitude (1) to no sound (0)
+      
+      osc.amp(envelope); // Connect the envelope to the oscillator's amplitude
+
+      startTime = millis();  // Record the start time of the first cycle
+    }
+
+    function draw() {
+      if (paused) {
+        return; // Skip the drawing if the animation is paused
+      }
+
+      let currentTime = millis(); // Get the current time
+      let elapsedTime = currentTime - startTime; // Calculate the elapsed time
+
+      if (elapsedTime < duration) {
+        // During the first 1 second, display the white disc and play the sound
+        background(0);  // Set the background to black
+        fill(255);      // Set the fill color to white
+        ellipse(width / 4, height / 2, 0.9 * width / 2, 0.9 * height); // Draw a white disc on the left half
+        
+        if (!osc.started) {
+          osc.start();  // Start the oscillator
+          envelope.play(osc, 0, duration);  // Play the envelope over the duration
+        }
+      } else if (elapsedTime < 4 * 2/3 * duration) {
+        // During the second 1 second, display a black screen and stop the sound
+        background(0);   // Set the background to black
+        if (osc.started) {
+          osc.stop();    // Stop the oscillator
+          osc.started = false;  // Reset the started flag
+        }
+      } else {
+        // Reset the start time after 2 seconds to repeat the cycle
+        startTime = millis();
+      }
+    }
+
+    function mousePressed() {
+      togglePauseResume();
+    }
+
+    function keyPressed() {
+      if (key === ' ' || keyCode === 32) { // Spacebar key
+        togglePauseResume();
+      }
+    }
+
+    function togglePauseResume() {
+      if (paused) {
+        // If currently paused, resume the animation
+        paused = false;
+        // Adjust the start time to account for the time spent paused
+        startTime += millis() - lastTimePaused;
+      } else {
+        // If currently running, pause the animation
+        paused = true;
+        lastTimePaused = millis();
+        // Stop the oscillator if it's currently playing
+        if (osc.started) {
+          osc.stop();
+          osc.started = false;
+        }
+      }
+    }
+
+    function windowResized() {
+      resizeCanvas(windowWidth, windowHeight);  // Adjust canvas size when the window is resized
+      background(0);  // Maintain the black background
+    }
+  </script>
+</body>
+</html>

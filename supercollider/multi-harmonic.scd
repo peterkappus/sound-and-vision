@@ -26,7 +26,7 @@ s.options.numOutputBusChannels=4; //4 channels for UMC404HD (add + 2 channels fo
 //cleanup
 Pdef.all.do(_.clear);
 Pbindef.all.do(_.clear);
-~wt_buf.do(_.free);
+~wt_buf.do(_.free);==
 t.stop;
 
 //initialization
@@ -455,7 +455,7 @@ fork {
 
 	//want to record?
 	~path = "/Users/peterk/Library/Mobile\ Documents/com~apple~CloudDocs/art\ \&\ music/pk\ music/supercollider\ captures/raw/" ++ Date.getDate.rawSeconds.asString.stripWhiteSpace ++ ".aiff";
-s.record(~path);
+	//s.record(~path);
 
 	//s.stopRecording;
 	//Where are the recordings?
