@@ -386,6 +386,7 @@ SynthDef(\FreeVerb2x2, {
 		signal = signal + (CombN.ar(signal, 1.5, [delayTime,delayTime*1.25], {delayTime * delayFeedback}) * delayMix);
 
 
+
 		signalToCompress = FreeVerb2.ar(
 			// FreeVerb2 - true stereo UGen
             signal[0], // Left channel
@@ -393,6 +394,7 @@ SynthDef(\FreeVerb2x2, {
             mix, room, damp, amp
         );
 
+	/*
 	  //probably unnecessary if I compress & normalise after recording...
 	  Compander.ar(signalToCompress, signalToCompress,
 			thresh: 0.5,
@@ -402,7 +404,7 @@ SynthDef(\FreeVerb2x2, {
 			relaxTime:  0.01,
 			mul: 1;
 		);
-
+		*/
 	); // same params as FreeVerb 1 chn version
 
 }).add;

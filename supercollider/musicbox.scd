@@ -6,12 +6,16 @@
 ~goArp.value;
 
 
+
 // Setup
 (
-~maxCount = 128;
-~tempo = 80;
+
+//~ccParams.put(17,1);
+
+~maxCount = 256;
+~tempo = 125;
 ~releaseTime = 04;
-~octaves = #[-2,-1,0,1,2];
+~octaves = #[-3,-2,-1,0,1,2];
 //~octaves = #[0];
 ~durations = [1/4,1/2,3/8];
 
@@ -115,20 +119,20 @@ s.boot;
 	var plunk = BPF.ar(plunkWav, 250 + (Rand(300,1000) * plunkFilterEnv),0.5) * 0.8 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25)) * ~getControlParam.value(21);
 
 	//A bit of white, pink brown, or gray noise are nice, too!
-	var noisePlunkWave = PinkNoise.ar();
-	var noisePlunkEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.2));
+	var noisePlunkWave = Resonz.ar(BrownNoise.ar(),1200,0.2);
+	var noisePlunkEnv = EnvGen.kr(Env.perc(attackTime: 0.001, releaseTime: 0.05));
 
-	var noisePlunk = {BPF.ar(noisePlunkWave, 20 + (Rand(20,500) * noisePlunkEnv),0.85) * 0.35 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
+	var noisePlunk = {BPF.ar(noisePlunkWave, 2000 + (Rand(20,500) * noisePlunkEnv),0.85) * 0.35 * EnvGen.ar(Env.perc(attackTime: 0.01, releaseTime: 0.25))} ! 2;
 
 
 	//add some nice/weird otherworldly weird harmonics using simple math ratios
 
-	sig = sig + (~detuneSine.value(freq * 1/4) * 0.2 * ~getControlParam.value(17));
+	sig = sig + (~detuneSine.value(freq * 1/8) * 0.2 * ~getControlParam.value(17));
 	sig = sig + (~detuneSine.value(freq * 8) * 0.1 * ~getControlParam.value(18));
 	sig = sig + (~detuneSine.value(freq * 7/5) * 0.01 * ~getControlParam.value(19));
 	sig = sig + (~detuneSine.value(freq * 16) * 0.1  * ~getControlParam.value(20));
 
-	sig = sig + noisePlunk + plunk;
+	sig = sig;// + noisePlunk + plunk;
 
 	// uncomment to only listen to the plunk
 	//sig = plunk;

@@ -16,14 +16,17 @@ s.boot;
 ~controllers = nil!100; //an array to hold controller data (one slot per channel)
 
 // array using channel Id's for indices, each slot contains a dictionary with min, max, current value, and arg name to pass into synth
-~controllers[~paramsToChans.at(\filterFreq)] = Dictionary.newFrom([\min, 200,\max, 8000,\current, 1200, \argName,\filterFreq]);
+~controllers[~paramsToChans.at(\filterFreq)] = Dictionary.newFrom([\min, 200,\max, 12000,\current, 1200, \argName,\filterFreq]);
 ~controllers[~paramsToChans.at(\detuneAmt)] = Dictionary.newFrom([\min, 1.001,\max, 1.2,\current, 1.02, \argName,\detuneAmt]);
 
 this.executeFile(Document.current.dir ++ "/utils.scd");
 
 //controller mapping
 
+)
 
+
+(
 
 SynthDef.new(\iter, {
 	arg freq = 40, vol = 1, filterFreq = 200, detuneAmt = 0.7, pan = 0;
@@ -32,7 +35,7 @@ SynthDef.new(\iter, {
 
 	sum = 0;
 	env = EnvGen.kr(
-		Env.perc(0.01, {Rand(1,4)} , 1, -2),
+		Env.perc(0.01, 0.5, 1, -2),
 		doneAction:2
 	);
 
@@ -48,7 +51,8 @@ SynthDef.new(\iter, {
 
 	sum = sum * 0.05 * env * vol;
 
-	sum = RLPF.ar(sum,filterFreq);
+	sum = Resonz.ar(sum,filterFreq,0.4, mul:8);
+	//sum = LPF.ar(sum, filterFreq);
 
 	sum = Balance2.ar(sum[0],sum[1],pan);
 

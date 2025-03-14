@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grid of Circles with Harmonic Scale</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.2/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.2/addons/p5.sound.min.js"></script>
+</head>
+<body>
+<script>
+// Canvas dimensions for optimal YouTube landscape video (1920x1080)
+let canvasWidth = 1920; //1080;
+let canvasHeight = 1080;
+
+let rows = 20; // Number of rows in the grid
+let cols = 40; // Number of columns in the grid
+let gridMargin = 0.1; // 10% margin around the grid
+let circles = []; // Store all circle objects
+let oscillators = []; // Store all oscillators
+let startingFreq = 18000; // Base frequency (Hz) ± 20%
+let tonic = 220; // Tonic frequency (Hz) for the harmonic scale
+let harmonicScale = []; // Harmonic scale frequencies
+let duration = 5000; // Animation duration in milliseconds (10 seconds)
+let sustainTime = 600; // Sustain period in milliseconds (5 seconds)
+let fadeOutTime = 6000; // Fade-out period in milliseconds (1 second)
+let isAnimating = false;
+
+function setup() {
+  createCanvas(canvasWidth, canvasHeight);
+  frameRate(60); // Maximum frame rate
+  background(0);
+  noStroke();
+
+  // Generate harmonic scale based on the tonic
+  for (let i = 1; i <= 100; i++) {
+    harmonicScale.push(tonic * random([1,2,3,4,5,6,8,13,15,16,24])/ random([0.5,1,2,2,4])); // Add harmonic multiples (e.g., 220, 440, 660, ...)
+  }
+
+  // Calculate grid dimensions
+  let gridWidth = width * (1 - 2 * gridMargin);
+  let gridHeight = height * (1 - 2 * gridMargin);
+  let cellWidth = gridWidth / cols;
+  let cellHeight = gridHeight / rows;
+  let circleRadius = min(cellWidth, cellHeight) * 0.95; // Circles fill 90% of each cell
+  let finalRadius = cellHeight * 0.35; // 5% of the cell height
+
+  // Initialize circles and oscillators
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      let x = gridMargin * width + col * cellWidth + cellWidth / 2;
+      let y = gridMargin * height + row * cellHeight + cellHeight / 2;
+      let freqOffset = random(-0.2, 0.2) * startingFreq; // ±20% frequency variation
+      let circle = {
+        x,
+        y,
+        pan: random(-1,1),
+        radius: circleRadius,
+        maxRadius: circleRadius,
+        finalRadius: finalRadius,
+        freq: startingFreq + freqOffset,
+        endFreq: random(harmonicScale) * random(0.98,1.02), // Random harmonic frequency
+      };
+      circles.push(circle);
+
+      // Oscillator setup
+      let osc = new p5.Oscillator('sine');
+      osc.freq(circle.freq);
+      osc.amp(0, 0); // Start silent
+      osc.pan(circle.pan);
+      oscillators.push(osc);
+    }
+  }
+}
+
+function draw() {
+  if (!isAnimating) return;
+
+  let elapsedTime = millis();
+
+  // Clear screen
+  background(0);
+
+  for (let i = 0; i < circles.length; i++) {
+    let circle = circles[i];
+    let osc = oscillators[i];
+
+    if (elapsedTime <= duration) {
+      let progress = elapsedTime / duration;
+
+      // Shrink the circle
+      circle.radius = lerp(circle.maxRadius, circle.finalRadius, constrain(progress, 0, 1));
+      fill(255);
+      circleShape(circle.x, circle.y, circle.radius * 2);
+
+      // Update oscillator frequency
+      let baseFreq = lerp(circle.freq, circle.endFreq, constrain(progress, 0, 1));
+      osc.freq(baseFreq);
+      //osc.amp(0.2, 0.1); // Maintain constant amplitude during this phase
+    } else if (elapsedTime <= duration + sustainTime) {
+      // Sustain phase: keep final radius and frequency
+      circle.radius = circle.finalRadius;
+      fill(255);
+      circleShape(circle.x, circle.y, circle.radius * 2);
+
+      osc.freq(circle.endFreq);
+      osc.amp(0.25); // Sustain amplitude
+    } else if (elapsedTime <= duration + sustainTime + fadeOutTime) {
+      // Fade-out phase: fade amplitude and radius to 0
+      let fadeProgress = (elapsedTime - (duration + sustainTime)) / fadeOutTime;
+      circle.radius = circle.finalRadius * (1 - fadeProgress);
+      fill(255);
+      circleShape(circle.x, circle.y, circle.radius * 2);
+      osc.amp(0.25 * (1 - fadeProgress));
+    } else {
+      // Stop the oscillator at the end
+      osc.amp(0, 0.1);
+    }
+  }
+}
+
+function resetAnimation() {
+  // Reset all circles and oscillators
+  for (let i = 0; i < circles.length; i++) {
+    circles[i].radius = circles[i].maxRadius;
+    oscillators[i].freq(circles[i].freq);
+    oscillators[i].amp(0); // Silence
+  }
+
+  isAnimating = false; // Stop animation
+}
+
+function keyPressed() {
+  if (key === ' ') {
+    // Reset animation and start over
+    resetAnimation();
+    setTimeout(() => {
+      for (let osc of oscillators) {
+        osc.start();
+        osc.amp(0.5, 0.1); // Fade in amplitude
+      }
+      isAnimating = true;
+    }, 200); // 0.2-second delay
+  }
+}
+
+function circleShape(x, y, diameter) {
+  circle(x, y, diameter);
+}
+</script>
+</body>
+</html>
